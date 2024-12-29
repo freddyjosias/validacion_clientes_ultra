@@ -595,13 +595,13 @@ function migrar_mpls(array $data, $postgres, $sqlServer)
             $resultados['distrito'],
             $resultados['provincia'],
             $resultados['region'],
-            $resultados['serv_descripcion'] . ' MPLS',
+            // $resultados['serv_descripcion'] . ' MPLS',
             $directorio['PrimerNombre'],
             $directorio['ApellidoPaterno'],
             $directorio['ApellidoMaterno'], 
-            $resultadosContacto['desc_correo'],
-            $resultadosContacto['desc_celular'],
-            $resultadosContacto['desc_telefono'],
+            // $resultadosContacto['desc_correo'],
+            // $resultadosContacto['desc_celular'],
+            // $resultadosContacto['desc_telefono'],
             $resultados['tipo_documento'],
             $resultadosDireccion['tipo_domicilio'],
             $resultadosDireccion['nro_piso'],
@@ -610,12 +610,12 @@ function migrar_mpls(array $data, $postgres, $sqlServer)
             $resultadosDireccion['tipo_predio'],
             $datosEcom['CONI_ID_CONTRATO'],
             $datosEcom['SERI_ID_SERVICIO'],
-            $periodoEmision,
-            $dataRepresentante['desc_tipo_documento'],
-            $dataRepresentante['desc_numero_documento'],
-            $dataRepresentante['desc_nombres'],
-            $dataRepresentante['desc_apellido_paterno'],
-            $dataRepresentante['desc_apellido_materno']
+            // $periodoEmision,
+            // $dataRepresentante['desc_tipo_documento'],
+            // $dataRepresentante['desc_numero_documento'],
+            // $dataRepresentante['desc_nombres'],
+            // $dataRepresentante['desc_apellido_paterno'],
+            // $dataRepresentante['desc_apellido_materno']
         ];
 
         // print_r_f($params);
@@ -648,34 +648,6 @@ function convertDateToISOFormat($dateString): ?string
     }
     
     return $dateObject->format('Y-m-d');
-}
-
-function convertAnchoBandaToMbpsGbps($anchoBanda) {
-    if ($anchoBanda == '1000' or $anchoBanda == '1000000.00' or $anchoBanda == '1000.00') {
-        return '1 Gbps';
-    } else if ($anchoBanda == '10000') {
-        return '10 Gbps';
-    } else if ($anchoBanda == '100000') {
-        return '100 Gbps';
-    } elseif ($anchoBanda == '800' or $anchoBanda == '800000.00') {
-        return '800 Mbps';
-    } else if ($anchoBanda == '600' or $anchoBanda == '600000.00') {
-        return '600 Mbps';
-    } else if ($anchoBanda == '10') {
-        return '10 Mbps';
-    } else if ($anchoBanda == '1') {
-        return '1 Mbps';
-    } else {
-        return $anchoBanda;
-    }
-}
-
-function convertStatusToDescription($status) {
-    if ($status == 'Sin Conformidad') {
-        $status = 'Activo';
-    }
-
-    return $status;
 }
 
 function convertCodModenaToDescription($codModena) {
@@ -761,25 +733,6 @@ function sonNombresSimiliares($nombre1, $nombre2, $porcentajeSimilitud = 95) {
 
 function eliminarEspaciosMultiples($texto) {
     return preg_replace('/\s+/', ' ', trim($texto));
-}
-
-function validateOfertaXVelocidad($oferta, $velocidad) {
-
-    if($oferta == 'Ultra 1000' and $velocidad == '1 Gbps') {
-        return true;
-    } else if(($oferta == 'ULTRA 600' or $oferta == 'Ultra 1000') and $velocidad == '600 Mbps') {
-        return true;
-    } else if($oferta == 'Ultra 600' and $velocidad == '600 Mbps') {
-        return true;
-    } else if($oferta == 'Ultra 1000' and $velocidad == '800 Mbps') {
-        return true;
-    } else if($oferta == 'Ultra 800' and ($velocidad == '800 Mbps' or $velocidad == '1 Gbps')) {
-        return true;
-    } else if($oferta == 'ULTRA 600' and $velocidad == '1 Gbps') {
-        return true;
-    }
-
-    return false;
 }
 
 function limpiarCaracteresEspeciales2($texto) {

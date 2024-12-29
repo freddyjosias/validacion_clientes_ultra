@@ -274,8 +274,9 @@ update data_ultra_raw set flg_migrado = 0, desc_observacion = '' where IdPedido 
 
 SELECT nro_documento, razon_social, nombres, ape_paterno, ape_materno, razon_social_intranet FROM data_ultra_procesado 
 select * FROM data_ultra_procesado WHERE ape_materno = '.'
-SELECT * FROM data_ultra_procesado  where desc_oferta = 'ULTRA 600 '
-SELECT desc_oferta, count(*) FROM data_ultra_procesado group by desc_oferta
+SELECT * FROM data_ultra_procesado  where desc_oferta = 'ULTRA 600 'ta
+
+UPDATE data_ultra_procesado SET razon_social = '1' where id_data = 1
 
 
 SELECT * FROM data_ultra_procesado where nro_documento = 'F60717293';
@@ -462,3 +463,41 @@ CREATE TABLE [dbo].[data_raw_ultra_bk2](
 )
 
 
+select * from data_ultra_contacto WHERE CTOV_EMAIL LIKE '%Administracion@junglepictures.%'
+select * from data_ultra_contacto WHERE CTOV_TELEFONO_CELU = ' 991924899 -'
+select * from data_ultra_contacto WHERE CTOV_TELEFONO_CELU = '5215538807928'
+
+
+select * from data_ultra_contacto WHERE CTOV_TELEFONO_FIJO <> LTRIM(RTRIM(CTOV_TELEFONO_FIJO))
+
+update data_ultra_contacto set CTOV_TELEFONO_FIJO = LTRIM(RTRIM(CTOV_TELEFONO_FIJO)) where CTOV_TELEFONO_FIJO <> LTRIM(RTRIM(CTOV_TELEFONO_FIJO))
+
+
+update data_ultra_contacto set CTOV_TELEFONO_FIJO = '2990214' WHERE CTOV_TELEFONO_FIJO = '2990214- 4444921'
+
+
+
+select * from data_ultra_contacto where CTOV_TELEFONO_CELU <> LTRIM(RTRIM(CTOV_TELEFONO_CELU))
+
+update data_ultra_contacto set CTOV_TELEFONO_CELU = LTRIM(RTRIM(CTOV_TELEFONO_CELU)) where CTOV_TELEFONO_CELU <> LTRIM(RTRIM(CTOV_TELEFONO_CELU))
+
+update data_ultra_contacto set CTOV_TELEFONO_FIJO = NULL WHERE CTOV_TELEFONO_FIJO = '5215538807928'
+
+
+
+update data_ultra_contacto set CTOV_TELEFONO_CELU = null, CTOV_TELEFONO_FIJO = '5215538807928' WHERE CTOV_TELEFONO_CELU = '52 15538807928'
+
+update data_ultra_contacto set CTOV_TELEFONO_CELU = '983200077' WHERE CTOV_TELEFONO_CELU = '+51 983 200 077'
+
+
+update data_ultra_contacto set CTOV_TELEFONO_CELU = '997527019' WHERE CTOV_TELEFONO_CELU = '997527019 -994074023'
+
+update data_ultra_contacto set CTOV_TELEFONO_CELU = '991924899' WHERE CTOV_TELEFONO_CELU = ' 991924899 -'
+
+update data_ultra_contacto set CTOV_TELEFONO_CELU = '937445678' WHERE CTOV_TELEFONO_CELU = '937445678 -937445678'
+update data_ultra_contacto set CTOV_TELEFONO_CELU = '986198247' WHERE CTOV_TELEFONO_CELU = '986 198 247'
+update data_ultra_contacto set CTOV_TELEFONO_CELU = '933543070', CTOV_TELEFONO_FIJO = '971449059' WHERE CTOV_TELEFONO_CELU = '933543070-971449059'
+
+-- update data_ultra_contacto set CTOV_EMAIL = 'administracion@junglepictures.com' WHERE CTOV_EMAIL = 'Administracion@junglepictures.'
+
+update data_ultra_contacto set CTOV_TELEFONO_CELU = NULL WHERE CTOV_TELEFONO_CELU = ''
