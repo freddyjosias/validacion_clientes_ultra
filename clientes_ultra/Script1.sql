@@ -72,11 +72,11 @@ GO */
 ADD flg_migrado TINYINT NOT NULL default 0
 
 ALTER TABLE data_ultra_raw
-ADD desc_observacion varchar(5000) NOT NULL default '' */
+ADD desc_observacion varchar(5000) NOT NULL default ''
 
 IF OBJECT_ID('data_ultra_procesado', 'U') IS NOT NULL
     DROP TABLE data_ultra_procesado;
-
+	
 CREATE TABLE data_ultra_procesado (
 	id_data INT IDENTITY(1,1) PRIMARY KEY, 
 	nro_documento VARCHAR(12) NOT NULL,
@@ -103,8 +103,8 @@ CREATE TABLE data_ultra_procesado (
 	desc_provincia VARCHAR(100) NOT NULL,
 	desc_region VARCHAR(100) NOT NULL,
 	desc_oferta VARCHAR(100) NOT NULL,
-)
-
+) */
+RETURN;
 ALTER TABLE data_ultra_procesado
 ADD 
     nombres VARCHAR(100) NOT NULL DEFAULT '',
@@ -278,6 +278,54 @@ SELECT * FROM data_ultra_procesado  where desc_oferta = 'ULTRA 600 'ta
 
 UPDATE data_ultra_procesado SET razon_social = '1' where id_data = 1
 
+
+SELECT status_ingreso_venta, status_resultado, * FROM data_ultra_procesado order by nro_documento 
+SELECT status_ingreso_venta, status_resultado, * FROM data_ultra_procesado where cod_pedido_pf_ultra <> 0 order by nro_documento 
+
+
+SELECT status_ingreso_venta, status_resultado, * FROM data_ultra_procesado where nro_documento = '00000574646'
+
+UPDATE data_ultra_procesado SET status_ingreso_venta = 1, status_resultado = '' where nro_documento = '000523863' and id_data = 348;
+
+
+-- LAST
+select * from data_ultra_procesado_last
+SELECT status_ingreso_venta, status_resultado, * FROM data_ultra_procesado_last order by nro_documento 
+SELECT status_ingreso_venta, status_resultado, * FROM data_ultra_procesado_last WHERE nro_documento = '000129962' order by nro_documento 
+
+select * into data_ultra_proc_detalle_last from data_ultra_proc_detalle
+
+
+
+-- truncate table data_ultra_proc_detalle_last
+select * from data_ultra_proc_detalle_last
+
+SELECT status_ingreso_venta, status_resultado, * FROM data_ultra_procesado_last WHERE status_ingreso_venta = 10 AND status_resultado = 'ok'
+
+
+
+-- UPDATE data_ultra_procesado_last SET status_ingreso_venta = 1, status_resultado = '' where id_data IN ( '105', '31', '275', '189', '398', '124', '203', '489', '659', '101', '144', '168', '518', '638', '546', '44', '349', '115', '176', '273', '58', '87', '202', '246', '245', '190', '123');
+-- LAST
+
+
+
+-- UAT
+SELECT status_ingreso_venta, status_resultado, * FROM data_ultra_procesado_uat order by nro_documento 
+select * from data_ultra_procesado_uat
+UPDATE data_ultra_procesado_uat SET status_ingreso_venta = 1, status_resultado = '' where nro_documento = '000523863' and id_data = 348;
+UPDATE data_ultra_procesado_uat SET status_ingreso_venta = 1, status_resultado = '' where status_resultado = 'No puedes continuar con el registro de venta debido a que las CTOs de la Zona se encuentran saturadas o no existen CTOs disponibles' and id_data = 348;
+-- UAT
+
+DROP TRIGGER  dbo.trg_PreventUpdateExceptFields;
+
+-- 00001262357
+-- 00000733531
+--   000574646
+SELECT * FROM data_ultra_raw where RUC like '%1262357%'
+
+SELECT * FROM ECOM.ECOM_CLIENTE WHERE CLIV_NRO_RUC like '%1262357%'
+
+SELECT status_ingreso_venta, status_resultado, * FROM data_ultra_procesado where razon_social = '' AND tipo_documento = 'RUC'
 
 SELECT * FROM data_ultra_procesado where nro_documento = 'F60717293';
 select * from data_ultra_raw where RUC = 100705;

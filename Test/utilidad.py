@@ -13,19 +13,21 @@ import pandas as pd
 import random
 import string
 
+DATABASE_NAME_TABLE = 'data_ultra_procesado_uat'
+
 class Util:
 
     def data_test(self, estado):
         try:
             conn = self.conexion_db()
             cursor = conn.cursor()
-            cursor.execute("SELECT id_data as id, desc_latitud as latitud, desc_longitud as longitud, 'MIGRACION WIN ULTRA' as observacion, " + 
-                           "nro_documento as dni, desc_celular as celular, desc_correo as correo, tipo_documento as tipodoc, " + 
+            cursor.execute("SELECT id_data as id, desc_latitud as latitud, desc_longitud as longitud, 'MIGRACIÓN WIN-ULTRA' as observacion, " +
+                           "nro_documento as dni, desc_celular as celular, desc_correo as correo, tipo_documento as tipodoc, " +
                            "tipo_vivienda as tipoviv, representante_tipo_doc as rtipodoc, representante_nro_doc as rdni, " + 
                            "nombres, ape_paterno as paterno, ape_materno as materno, representante_nombres as rnombres, " + 
                            "representante_ape_paterno as rpaterno, representante_ape_materno as rmaterno, " + 
-                           "nro_departamento as dpto, nro_piso as piso, tipo_predio as predio, nombre_condominio as condominio, torre_bloque as bloque, desc_oferta " + 
-                           f"FROM data_ultra_procesado WHERE fec_baja IS NULL AND estado_pedido = 'Activo' AND status_ingreso_venta = {estado} ORDER BY nro_documento ")
+                           "nro_departamento as dpto, nro_piso as piso, tipo_predio as predio, nombre_condominio as condominio, torre_bloque as bloque, desc_oferta, " +
+                           f" desc_producto, desc_celular2 as desc_phone FROM {DATABASE_NAME_TABLE} WHERE fec_baja IS NULL AND estado_pedido = 'Activo' AND status_ingreso_venta = {estado} ORDER BY nro_documento ")
             registros = cursor.fetchall()
             cursor.close()
             conn.close()
@@ -125,7 +127,7 @@ class Util:
         try:
             conn = self.conexion_db()
             cursor = conn.cursor()
-            cursor.execute("UPDATE data_ultra_procesado SET status_ingreso_venta = " + str(estado) + ", " + 
+            cursor.execute(f"UPDATE {DATABASE_NAME_TABLE} SET status_ingreso_venta = " + str(estado) + ", " +
                            "status_resultado = '" + str(text) + "' WHERE id_data = " + str(id) )
             afected_rows = cursor.rowcount
             conn.commit()
@@ -135,43 +137,3 @@ class Util:
         except Exception as err:
             print(f"Error al conectar a MySQL: {err}")
             return 0
-    
-    def correo_aleatorio(self):
-        # Generar el nombre de usuario con letras y números
-        longitud_usuario = random.randint(5, 10)  # Longitud aleatoria entre 5 y 10 caracteres
-        usuario = ''.join(random.choices(string.ascii_lowercase + string.digits, k=longitud_usuario))
-
-        # Lista de dominios posibles
-        dominios = ["gmail.com", "yahoo.com", "hotmail.com", "outlook.com"]
-        dominio = random.choice(dominios)
-
-        # Combinar usuario y dominio
-        correo = f"{usuario}@{dominio}"
-        return correo
-
-    def importar_data(self):
-
-        # Leer el archivo Excel
-        self.df = pd.read_excel(r"C:\Download\Data.xlsx")
-        # resetear datos de mysql
-        conn = self.conexion_db()
-        cursor = conn.cursor()
-        cursor.execute("UPDATE data_ultra_procesado SET status_ingreso_venta = 0" )
-        conn.commit()
-
-        # Iterar sobre las filas del DataFrame e insertar en MySQL
-        for _, fila in self.df.iterrows():
-            consulta = """
-            INSERT INTO test_venta (dni, latitud, longitud, celular, correo, fecha )
-            VALUES (%s, %s, %s)
-            """
-            datos = (fila['Nro. RUC'], str(random.uniform(-77.0, -77.999999999999)), 
-                     str(random.uniform(-12.0, -12.999999999999)), str(random.uniform(900100000, 979199999)), 
-                    self.correo_aleatorio(), "20-12-2024" )
-            cursor.execute(consulta, datos)
-
-        # Confirmar los cambios
-        conn.commit()
-        # Cerrar la conexión
-        cursor.close()
-        conn.close()

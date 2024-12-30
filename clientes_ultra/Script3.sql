@@ -112,6 +112,7 @@ CREATE TABLE data_ultra_proc_detalle (
     cod_moneda CHAR(2) NOT NULL,
     monto DECIMAL(10, 2) NOT NULL,
     cantidad INT NOT NULL,
+    megas_cantidad INT NOT NULL,
     tipo_modalidad CHAR(2) NOT NULL,
     tipo_naturaleza CHAR(2) NOT NULL,
     tipo_emision CHAR(2) NOT NULL,
@@ -119,17 +120,40 @@ CREATE TABLE data_ultra_proc_detalle (
     cantidad_cuotas INT NULL,
     fecha_inicio DATE NULL,
     fecha_fin DATE NULL,
-    tipo_producto INT NOT NULL
+    tipo_producto CHAR(2) NOT NULL
 );
-
-
-TRUNCATE TABLE data_ultra_proc_detalle
 
 ALTER TABLE data_ultra_proc_detalle
 ADD CONSTRAINT UQ_DatosPedidosUltra2 UNIQUE (cod_pedido_ultra, cod_circuito, desc_concepto);
 
+SELECT RentaMensual FROM data_ultra_raw WHERE CircuitoCod = '' or IdPedido = ''
+
+
+TRUNCATE TABLE data_ultra_proc_detalle
+
+
+
 select *
 from data_ultra_proc_detalle
+
+select distinct desc_concepto
+from data_ultra_proc_detalle
+
+
+SELECT p.*
+FROM data_ultra_procesado p
+where p.cod_pedido_pf_ultra <> 0 AND p.desc_activacion_habil = 'HABILITADO' AND p.desc_observacion_activacion = 'OK'
+AND concat(p.cod_circuito, '-', p.cod_pedido_ultra) in 
+(select concat(a.cod_circuito, '-', a.cod_pedido_ultra) from data_ultra_proc_detalle a)
+
+
+SELECT p.cod_pedido_pf_ultra, d.*
+FROM data_ultra_procesado p
+INNER JOIN data_ultra_proc_detalle d ON p.cod_circuito = d.cod_circuito and p.cod_pedido_ultra = d.cod_pedido_ultra
+where p.cod_pedido_pf_ultra <> 0 AND p.desc_activacion_habil = 'HABILITADO' AND p.desc_observacion_activacion = 'OK'
+AND p.cod_pedido_ultra = 0 and p.cod_circuito = 29640
+
+
 
 
 

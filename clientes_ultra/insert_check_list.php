@@ -2,7 +2,10 @@
 require_once __DIR__ . '/../connection.php';
 require_once __DIR__ . '/../functions.php';
 
-$mysql = new MySQLConnection('10.1.4.81:33061', 'wincrm_ultra', 'root', 'R007w1N0r3');
+const DB_MYSQL_WINCRM_ULTRA = 'wincrm_ultra_last';
+const TABLE_DATA_ULTRA_PROCESADO = 'data_ultra_procesado_last';
+
+$mysql = new MySQLConnection('10.1.4.81:33061', DB_MYSQL_WINCRM_ULTRA, 'root', 'R007w1N0r3');
 $mysql->connect();
 
 $sqlServer = new SQLServerConnection('10.1.4.20', 'PE_OPTICAL_ADM', 'PE_OPTICAL_ERP', 'Optical123+');
@@ -18,7 +21,7 @@ $scriptFinal = '';
 
 foreach ($resultado as $item)
 {
-    $checkProcesado = $sqlServer->select("SELECT * FROM data_ultra_procesado 
+    $checkProcesado = $sqlServer->select("SELECT * FROM " . TABLE_DATA_ULTRA_PROCESADO . " 
     where desc_activacion_habil = 'HABILITADO' AND desc_observacion_activacion = 'OK' AND cod_pedido_pf_ultra = ?", [$item['PEDI_COD_PEDIDO']]);
 
     if(count($checkProcesado) !== 1)
