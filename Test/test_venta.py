@@ -21,7 +21,7 @@ CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 IMAGEN_PATH = os.path.join(CURRENT_DIR, "contrato_generico.pdf")
 
-FECHA_TRAMO = "30-12-2024"
+FECHA_TRAMO = "31-12-2024"
 HORA_TRAMO = "12:00"
 
 class TestVenta:
@@ -207,7 +207,7 @@ class TestVenta:
     if resultado_eval == "Lo siento...":
       self.util.cerrar_prueba(6, self.util.wait_css(".swal2-html-container").text, self.id)
       self.util.wait_css_clic(".swal2-confirm")
-      time.sleep(3)
+      time.sleep(2)
       return 1
 
     self.util.wait_css_clic(".swal2-confirm")
@@ -216,7 +216,7 @@ class TestVenta:
     #planes
     self.util.wait_id_clic("tipoBusqueda").find_element(By.XPATH, "//option[. = 'Internet']").click()
     
-    time.sleep(2)
+    time.sleep(1)
 
     self.util.wait_id_clic("filtroOferta").find_element(By.XPATH, f"//option[. = '{self.desc_producto}']").click()
     self.util.wait_name_clic("plan")
@@ -230,7 +230,7 @@ class TestVenta:
 
     elemento.send_keys(FECHA_TRAMO + Keys.RETURN)
 
-    time.sleep(4)
+    time.sleep(1)
 
     elemento = self.util.wait_id_clic("tramo_horario_rango")
     self.driver.execute_script("arguments[0].removeAttribute('readonly')", elemento)
