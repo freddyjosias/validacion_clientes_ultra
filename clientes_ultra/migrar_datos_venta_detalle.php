@@ -3,9 +3,9 @@
 require_once __DIR__ . '/../connection.php';
 require_once __DIR__ . '/../functions.php';
 
-const DB_MYSQL_WINCRM_ULTRA = 'wincrm_ultra_last';
-const TABLE_DATA_ULTRA_PROCESADO = 'data_ultra_procesado_last';
-const TABLE_DATA_ULTRA_PROC_DETALLE = 'data_ultra_proc_detalle_last';
+const DB_MYSQL_WINCRM_ULTRA = 'wincrm_ultra_uat';
+const TABLE_DATA_ULTRA_PROCESADO = 'data_ultra_procesado_uat';
+const TABLE_DATA_ULTRA_PROC_DETALLE = 'data_ultra_proc_detalle';
 
 $sqlServer = new SQLServerConnection('10.1.4.20', 'PE_OPTICAL_ADM', 'PE_OPTICAL_ERP', 'Optical123+');
 $sqlServer->connect();
@@ -71,7 +71,7 @@ function procesar_venta_detalle($item, $pedidoUltra, $mysql, $sqlServer, $sqlSer
 
     if(count($ventaDetalleActual) != 1)
     {
-        print_r_f(['no encontrado - ERROR 65', $item]);
+        print_r_f(['no encontrado - ERROR 65', $item, $ventaDetalleActual]);
         return;
     }
 
@@ -79,8 +79,8 @@ function procesar_venta_detalle($item, $pedidoUltra, $mysql, $sqlServer, $sqlSer
 
     if ($ventaDetalleActual['VTDI_COD_TARIFARIO'] != 260 and $ventaDetalleActual['VTDI_COD_TARIFARIO'] != 261 and
     $ventaDetalleActual['VTDI_COD_TARIFARIO'] != 262 and $ventaDetalleActual['VTDI_COD_TARIFARIO'] != 263 and 
-    $ventaDetalleActual['VTDI_COD_TARIFARIO'] != 264) {
-        print_r_f(['no encontrado - ERROR 73', $item]);
+    $ventaDetalleActual['VTDI_COD_TARIFARIO'] != 264 and $ventaDetalleActual['VTDI_COD_TARIFARIO'] != 265) {
+        print_r_f(['no encontrado - ERROR 73', $item, $ventaDetalleActual]);
     }
 
     $servicioDetalle = $sqlServerActual->select("SELECT S.SERI_ID_SERVICIO, S.SERI_MODALIDAD_EMISION, 
@@ -227,8 +227,8 @@ function procesar_venta_detalle($item, $pedidoUltra, $mysql, $sqlServer, $sqlSer
         }*/
 
         $arrayServicios2 = ['Instalacion de Servicio Ultra', 'Decremento de renta', 'Incremento de Renta',
-        'Traslado'];
-        $arrayServicios3 = ['Servicio de Internet Ultra'];
+        'Traslado', 'Servicios Adicionales', 'Arrendamiento de Circuito'];
+        $arrayServicios3 = ['Servicio de Internet Ultra', 'Ultra Wifi Total'];
 
         if (in_array($servicio['CATV_DESCRIPCION_CONCEPTO'], $arrayServicios2))
         {
@@ -240,7 +240,7 @@ function procesar_venta_detalle($item, $pedidoUltra, $mysql, $sqlServer, $sqlSer
         }
         else
         {
-            print_r_f(['no encontrado - ERROR 209', $servicio]);
+            print_r_f(['no encontrado - ERROR 209', $servicio, $servicioDetalle]);
         }
     }
 
@@ -250,16 +250,18 @@ function procesar_venta_detalle($item, $pedidoUltra, $mysql, $sqlServer, $sqlSer
 
     foreach($servicioDetalle as $servicio)
     {
-        if((float) $servicio['SDEN_MONTO'] < 10 and (float) $servicio['SDEN_MONTO'] >= -1)
+        if((float) $servicio['SDEN_MONTO'] < 4 and (float) $servicio['SDEN_MONTO'] >= -1)
         {
             print_r_f(['no encontrado - ERROR 219 ' . (float) $servicio['SDEN_MONTO'], $item]);
         }
 
-        $tipoEmision2 = ['Instalacion de Servicio Ultra', 'Traslado'];
+        $tipoEmision2 = ['Instalacion de Servicio Ultra', 'Traslado', 'Servicios Adicionales'];
 
         if(in_array($servicio['CATV_DESCRIPCION_CONCEPTO'], $tipoEmision2) and $servicio['SDEI_TIPO_EMISION'] == 2)
         {
-            $nuevaVentaDetalle['general']['precio_instalacion'] = $servicio['SDEN_MONTO'];
+            if($servicio['CATV_DESCRIPCION_CONCEPTO'] === 'Instalacion de Servicio Ultra') {
+                $nuevaVentaDetalle['general']['precio_instalacion'] = $servicio['SDEN_MONTO'];
+            }
         }
         else if((int) $servicio['SDEI_TIPO_EMISION'] === 1)
         {
@@ -274,7 +276,7 @@ function procesar_venta_detalle($item, $pedidoUltra, $mysql, $sqlServer, $sqlSer
             }
         }
         else {
-            print_r_f(['no encontrado - ERROR 231', $servicio, $item]);
+            print_r_f(['no encontrado - ERROR 231', $servicio, $item, $servicioDetalle]);
         }
     }
 
@@ -282,7 +284,7 @@ function procesar_venta_detalle($item, $pedidoUltra, $mysql, $sqlServer, $sqlSer
 
     foreach($servicioDetalle as $servicio)
     {
-        $tipoEmision2 = ['Instalacion de Servicio Ultra', 'Traslado'];
+        $tipoEmision2 = ['Instalacion de Servicio Ultra', 'Traslado', 'Servicios Adicionales'];
 
         if(!is_null($servicio['SDED_FECHA']) and $servicio['SDED_FECHA'] > '2024-11-31') {
             continue;
@@ -379,9 +381,9 @@ function procesar_venta_detalle($item, $pedidoUltra, $mysql, $sqlServer, $sqlSer
             }
         }
 
-        if($montoComprobante !== $montoControlPago and $cantidadComprobante > 0)
+        if((string) $montoComprobante !== (string) $montoControlPago and $cantidadComprobante > 0)
         {
-            print_r_f(['no encontrado - ERROR 283', $item]);
+            print_r_f(['no encontrado - ERROR 283', $montoComprobante, $montoControlPago, $cantidadComprobante, $item]);
         }
 
         if($periodo >= '202501' and $montoControlPago !== $nuevaVentaDetalle['general']['monto_recurrente'])
@@ -538,17 +540,31 @@ function procesar_venta_detalle($item, $pedidoUltra, $mysql, $sqlServer, $sqlSer
     }
 
     $dataRaw = $dataRaw[0];
+    $dataRaw['RentaMensual'] = ltrim($dataRaw['RentaMensual'], 'S/');
+    $dataRaw['RentaMensual'] = trim($dataRaw['RentaMensual']);
+
+    if($dataRaw['RentaMensual'] == 391.51 and $nuevaVentaDetalle['general']['monto_recurrente_202411'] == 391.5) {
+        $dataRaw['RentaMensual'] = 391.5;
+    }
 
     if((string) $dataRaw['RentaMensual'] != (string) $nuevaVentaDetalle['general']['monto_recurrente_202411'])
     {
-        print_r_f(['no encontrado - ERROR 339', $dataRaw['RentaMensual'], $nuevaVentaDetalle['general']['monto_recurrente_202411'], $servicioDetalle]);
+        print_r_f(['no encontrado - ERROR 339', $dataRaw['RentaMensual'], $nuevaVentaDetalle['general']['monto_recurrente_202411'], $servicioDetalle, $item]);
     }
 
     // print_r_f(['nuevaVentaDetalle' => $nuevaVentaDetalle]);
+    $serviciosDetallados = [];
+    $puedenAgregarMuchos = ['Decremento de renta'];
 
     foreach($nuevaVentaDetalle['detalle'] as $indexDetalle => $servicio)
     {
         $nuevaVentaDetalle['detalle'][$indexDetalle]['monto'] = getMontoConIGV($servicio['monto']);
+
+        if(in_array($servicio['desc_concepto'], $serviciosDetallados) and !in_array($servicio['desc_concepto'], $puedenAgregarMuchos)) {
+            print_r_f(['no encontrado - ERROR 340', $servicio]);
+        }
+
+        $serviciosDetallados[] = $servicio['desc_concepto'];
     }
 
     // print_r_f($nuevaVentaDetalle);
@@ -610,7 +626,7 @@ function procesar_venta_detalle($item, $pedidoUltra, $mysql, $sqlServer, $sqlSer
         {
             echo "Error al insertar datos en la tabla " . TABLE_DATA_ULTRA_PROCESADO;
 
-            print_r_f([$indexDetalle, $finalQuery, $result]);
+            print_r_f([$indexDetalle, print_r_f($nuevaVentaDetalle), $finalQuery, $result]);
             print_r_f($result);
         }
     }
@@ -631,7 +647,9 @@ function procesar_venta_detalle($item, $pedidoUltra, $mysql, $sqlServer, $sqlSer
 function getMontoConIGV($monto)
 {
     $monto = round($monto * 1.18, 2);
-    $montosPermitidos = [175, -40, -50, -25, -94.4, 54.4, -45, -75, -60, 87.51, 87.5];
+    $montosPermitidos = [175, -40, -50, -25, -94.4, 54.4, -45, -75, -60, 87.51, 87.5, 125, 100, 45,
+    -30, -55, 612.53, -343.52, 673.77, 191.29, -404.76, 673.76, -5, -65, -70, 50, -199.51, -15, 118, -211.8, 135, 269,
+    150, -378.52, -192.52];
 
     if($monto == 175.01)
     {
@@ -651,7 +669,31 @@ function getMontoConIGV($monto)
     else if($monto == -75.01) {
         $monto = -75;
     }
-    
+    else if($monto == 174.99) {
+        $monto = 175;
+    }
+    else if($monto == 100.01) {
+        $monto = 100;
+    }
+    else if($monto == 45.01) {
+        $monto = 45;
+    }
+    else if($monto == -30.01) {
+        $monto = -30;
+    }
+    else if($monto == -55.01) {
+        $monto = -55;
+    }
+    else if($monto == -4.99) {
+        $monto = -5;
+    }
+    else if($monto == -65.01) {
+        $monto = -65;
+    }
+    else if($monto == -70.01) {
+        $monto = -70;
+    }
+
     if(in_array($monto, $montosPermitidos))
     {
         return $monto;

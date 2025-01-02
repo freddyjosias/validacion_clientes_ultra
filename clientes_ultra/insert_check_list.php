@@ -2,8 +2,8 @@
 require_once __DIR__ . '/../connection.php';
 require_once __DIR__ . '/../functions.php';
 
-const DB_MYSQL_WINCRM_ULTRA = 'wincrm_ultra_last';
-const TABLE_DATA_ULTRA_PROCESADO = 'data_ultra_procesado_last';
+const DB_MYSQL_WINCRM_ULTRA = 'wincrm_ultra_uat';
+const TABLE_DATA_ULTRA_PROCESADO = 'data_ultra_procesado_uat';
 
 $mysql = new MySQLConnection('10.1.4.81:33061', DB_MYSQL_WINCRM_ULTRA, 'root', 'R007w1N0r3');
 $mysql->connect();

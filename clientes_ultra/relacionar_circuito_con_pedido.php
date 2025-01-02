@@ -3,8 +3,9 @@
 require_once __DIR__ . '/../connection.php';
 require_once __DIR__ . '/../functions.php';
 
-const DB_MYSQL_WINCRM_ULTRA = 'wincrm_ultra_last';
-const TABLE_DATA_ULTRA_PROCESADO = 'data_ultra_procesado_last';
+const DB_MYSQL_WINCRM_ULTRA = 'wincrm_ultra_uat';
+const DB_MYSQL_WINFORCE_ULTRA = 'winforce_ultra_uat';
+const TABLE_DATA_ULTRA_PROCESADO = 'data_ultra_procesado_uat';
 
 $sqlServer = new SQLServerConnection('10.1.4.20', 'PE_OPTICAL_ADM', 'PE_OPTICAL_ERP', 'Optical123+');
 $sqlServer->connect();
@@ -12,19 +13,143 @@ $sqlServer->connect();
 $mysql = new MySQLConnection('10.1.4.81:33061', DB_MYSQL_WINCRM_ULTRA, 'root', 'R007w1N0r3');
 $mysql->connect();
 
-$resultados = $sqlServer->select("SELECT top 10 id_data, nro_documento, cod_pedido_ultra, cod_circuito, desc_latitud, desc_longitud,
-desc_distrito, desc_provincia, desc_region, desc_oferta FROM " . TABLE_DATA_ULTRA_PROCESADO . " 
+$mysql2 = new MySQLConnection('10.1.4.81:13306', DB_MYSQL_WINFORCE_ULTRA, 'root', 'r007w1n7o4');
+$mysql2->connect();
+
+$resultados = $sqlServer->select("SELECT id_data, nro_documento, cod_pedido_ultra, cod_circuito, desc_latitud, desc_longitud,
+desc_distrito, desc_provincia, desc_region, desc_oferta, nro_piso FROM " . TABLE_DATA_ULTRA_PROCESADO . " 
 where cod_pedido_pf_ultra = 0 and status_ingreso_venta = 10 and status_resultado = 'ok'");
 
 // print_r_f($resultados);
 $cantidadNoEncontrados = 0;
 $total = count($resultados);
 
+$exoneradosUbigeo = [];
+// $exoneradosUbigeo = ['000353411','000960830','007490766','06543622','07194374','07493750','07614982','07881267','08193680','08198045','08261985','08268886','09177801','09335139','09670340','10196529','10220900','10309014','10322472','10490515','10611044','10613407','20063177','20543587339','20549799591','20551846408','20565536657','20603299893','20604428328','29285108','40740355','41580048','43151755','44049621','44448779','44710951','73033903', '08272342','09751553','10058402','20545348412','75056788'];
+// $exoneradosUbigeo = ['000129962','000254510','07815496','07867981','07873713','07884806','08219229','08250928','08871375','09341001','10082401','10225906','10263763','10403083858','10727107440','10867356','20521368731','20543551571','20600640560','20608536583','22967744','29672570','40077091','40490587','41420531','41669190','43050379','43342568','43753716','44133281','47760771','71242680','74222198','76191935'];
+
+$exoneradosUbigeoLast = [];
+// $exoneradosUbigeoLast = ['000353411','000960830','007490766','06543622','07194374','07493750','07614982','07881267','08193680','08198045','08261985','08268886','09177801','09335139','09670340','10196529','10220900','10309014','10322472','10490515','10611044','10613407','20063177','20543587339','20551846408','20565536657','20603299893','20604428328','29285108','40740355','41580048','43151755','44049621','44448779','44710951','73033903'];
+
 foreach($resultados as $index => $fila)
 {
-    if($fila['cod_circuito'] == '38989' and $fila['desc_distrito'] == 'CHACLACAYO') {
-        $fila['desc_distrito'] = 'ATE';
+    $resultados[$index]['desc_latitud'] = rtrim($fila['desc_latitud'], '0');
+    $resultados[$index]['desc_longitud'] = rtrim($fila['desc_longitud'], '0');
+}
+
+
+foreach($resultados as $index => $fila)
+{
+    $pedidoEntontrado = false;
+    $cantPedidosEncontrados = 0;
+    $dataPedido = [];
+
+    $resultadosIgualdad = [];
+
+    $pedidosWinforce = $mysql2->select("SELECT * 
+    FROM tp_ventas v
+    INNER JOIN tp_busquedas b ON v.ide_bus = b.ide_bus
+    where v.ide_pedido is not null 
+    and v.ide_pedido <> 0 and v.cli_num_doc = ?", [$fila['nro_documento']]);
+
+    foreach($pedidosWinforce as $indice => $pedido)
+    {
+        $pedidosWinforce[$indice]['ven_lat'] = rtrim($pedido['ven_lat'], '0');
+        $pedidosWinforce[$indice]['ven_lng'] = rtrim($pedido['ven_lng'], '0');
+        $pedidosWinforce[$indice]['piso'] = $pedido['piso'] == ',' ? '' : $pedido['piso'];
     }
+
+    foreach($pedidosWinforce as $indice => $pedido)
+    {
+        $ubigeo = $fila['desc_region'] . ' ' . $fila['desc_provincia'] . ' ' . $fila['desc_distrito'];
+
+        if(in_array($fila['nro_documento'], $exoneradosUbigeo))
+        {
+            if($pedido['cli_num_doc'] === $fila['nro_documento'] and $pedido['nom_oferta'] === $fila['desc_oferta'] and 
+            $pedido['ven_lat'] === $fila['desc_latitud'] and $pedido['ven_lng'] === $fila['desc_longitud'])
+            {
+                $pedidoEntontrado = true;
+                $dataPedido = $pedido;
+                $cantPedidosEncontrados++;
+            }
+        }
+        else
+        {
+            if($pedido['cli_num_doc'] === $fila['nro_documento'] and $pedido['nom_oferta'] === $fila['desc_oferta'] and 
+            $pedido['ven_lat'] === $fila['desc_latitud'] and $pedido['ven_lng'] === $fila['desc_longitud'] and 
+            $pedido['ven_ubigeo'] === $ubigeo and $pedido['piso'] === $fila['nro_piso'])
+            {
+                $pedidoEntontrado = true;
+                $dataPedido = $pedido;
+                $cantPedidosEncontrados++;
+            }
+        }
+
+        // print_r_f([$fila, $pedido, $ubigeo]);
+
+        $resultadosIgualdad[] = [
+            'nro_documento' => $fila['nro_documento'] === $pedido['cli_num_doc'],
+            'desc_oferta' => $fila['desc_oferta'] === $pedido['nom_oferta'],
+            'desc_latitud' => $fila['desc_latitud'] === $pedido['ven_lat'],
+            'desc_longitud' => $fila['desc_longitud'] === $pedido['ven_lng'],
+            'desc_ubigeo' => $pedido['ven_ubigeo'] === $ubigeo,
+            'ubigeo_pedido' => $pedido['ven_ubigeo'],
+            'ubigeo_fila' => $ubigeo,
+            'nro_piso' => $fila['nro_piso'] === $pedido['piso'],
+        ];
+    }
+
+    // print_r_f([$resultadosIgualdad, $fila]);
+
+    if($cantPedidosEncontrados === 1 and $pedidoEntontrado)
+    {
+        $resultProcesados = $sqlServer->select("SELECT * FROM " . TABLE_DATA_ULTRA_PROCESADO . " where nro_documento = ?", [$fila['nro_documento']]);
+
+        foreach($resultados as $index => $items)
+        {
+            $resultados[$index]['desc_latitud'] = rtrim($items['desc_latitud'], '0');
+            $resultados[$index]['desc_longitud'] = rtrim($items['desc_longitud'], '0');
+        }
+
+
+        $tienenElMismoUbigeo = false;
+
+        foreach($resultProcesados as $itemProcesado)
+        {
+            foreach($resultProcesados as $itemProcesado2)
+            {
+                if($itemProcesado['desc_latitud'] == $itemProcesado2['desc_latitud'] 
+                and $itemProcesado['desc_longitud'] == $itemProcesado2['desc_longitud'] and
+                $itemProcesado['id_data'] != $itemProcesado2['id_data'] and $itemProcesado['nro_piso'] == $itemProcesado2['nro_piso'])
+                {
+                    $tienenElMismoUbigeo = true;
+                    break;
+                }
+            }
+        }
+
+        if($tienenElMismoUbigeo or count($resultProcesados) == 0)
+        {
+            // print_r_f(['no encontrado 3', $resultProcesados]);
+            $cantidadNoEncontrados++;
+            continue;
+        }
+
+        // print_r_f(['no encontrado 4',$fila, $dataPedido]);
+
+        $sqlServer->update("UPDATE " . TABLE_DATA_ULTRA_PROCESADO . " SET cod_pedido_pf_ultra = ? 
+            WHERE id_data = ? and nro_documento = ?", [$dataPedido['ide_pedido'], $fila['id_data'], $fila['nro_documento']]);
+            
+        // print_r_f(['no encontrado 4', $fila, $dataPedido]);
+        continue;
+    }
+
+    /* $cantidadNoEncontrados++;
+    continue;
+
+    print_r_f([$fila, $pedidoEntontrado, $resultadosIgualdad, $pedidosWinforce]);
+
+    print_r_f(['start', $fila]);*/
 
     $pedidosUltra = $mysql->select("SELECT P.PEDI_COD_PEDIDO, C.CLIV_NUMERO_DOCUMENTO, D.DIRN_LATITUD, D.DIRN_LONGITUD, 
     UPPER(U1.UBIV_DESCRIPCION) desc_distrito, UPPER(U2.UBIV_DESCRIPCION) desc_provincia, O.OFTV_NOMBRE
@@ -38,7 +163,7 @@ foreach($resultados as $index => $fila)
 
     if(count($pedidosUltra) == 0)
     {
-        // print_r_f(['no encontrado 2', $pedidosUltra, $fila]);
+        print_r_f(['no encontrado 2', $pedidosUltra, $fila]);
         $cantidadNoEncontrados++;
         continue;
     }
@@ -80,12 +205,13 @@ foreach($resultados as $index => $fila)
         ];
     }
 
+    // print_r_f([$resultadosIgualdad, $fila]);
+
     if($cantPedidosEncontrados > 1)
     {
-        echo 'Mas de un pedido encontrado para el cliente: ' . $fila['nro_documento'] . "\n";
+        // echo 'Mas de un pedido encontrado para el cliente: ' . $fila['nro_documento'] . "\n"; //die;
         $cantidadNoEncontrados++;
         continue;
-        die;
     }
     else if($cantPedidosEncontrados === 1 and $pedidoEntontrado)
     {
@@ -108,7 +234,8 @@ foreach($resultados as $index => $fila)
 
         if($estanEnElMismoDistrito or count($resultProcesados) == 0)
         {
-            print_r_f(['no encontrado 3', $resultProcesados]);
+            // print_r_f(['no encontrado 3', $resultProcesados]);
+            $cantidadNoEncontrados++;
             continue;
         }
 
@@ -121,15 +248,11 @@ foreach($resultados as $index => $fila)
 
     if(count($pedidosUltra) === 1)
     {
-        $exoneradosUbigeo = ['06543622', '07194374', '10059205', '10059673', '10064780', '10087466391', '10206992', '10220900', '10225871', '10274486', '10309014', '10316223', '10319937', '10322472', '10490515', '10495728', '10542688', '10568618', '10611044', '10612358', '10613407', '10720561', '10866870', '20063177', '20101050301', '20392926535', '20460446733', '20543587339', '20551846408', '20556950327', '20565536657', '20602764380', '20603299893', '20604428328', '20608834843', '20609305631', '21797199', '21801476', '29285108', '40059566', '40283221', '40373389', '40430041', '06379930', '06477570', '06514079', '06514555', '06543622', '06630112', '06673293', '07194374', '07269119', '07341989', '07493750', '07614982', '07770641', '07797555', '07798132', '07799543', '07799555', '07813838', '07857780', '07868357', '07869604', '07881267', '08182571', '08193680', '08198045', '08228932', '08240706', '08246414', '08249218', '08261985', '08267349', '08273746', '40933789', '41012824', '41236559', '41328730', '40508624', '40512437', '40532535', '40597395', '09801119', '09886083', '09935253', '10003874', '000025316', '000222928', '000960830', '005259140', '08746434', '08746756', '09139079', '09177368', '09177801', '09179216', '09335139', '09342698', '09343266', '09344186', '09381598', '09382910', '09383226', '09670340', '41499384', '41580048', '41814922', '42242476', '42652520', '43151755', '43175087', '43313255', '43462560', '43497375', '43875727', '44049621', '44448779', '44710951', '45281859', '45548918', '45988122', '46329774', '46417172', '70089575', '70150032', '73033903', '75056788' ];
-
-        // $exoneradosUbigeo = [];
-
         $resultProcesados = $sqlServer->select("SELECT * FROM " . TABLE_DATA_ULTRA_PROCESADO . " where nro_documento = ?", [$fila['nro_documento']]);
         $pedidosUltra = $pedidosUltra[0];
 
         if(count($resultProcesados) === 1 and $pedidosUltra['OFTV_NOMBRE'] === $resultProcesados[0]['desc_oferta'] and
-        in_array($pedidosUltra['CLIV_NUMERO_DOCUMENTO'], $exoneradosUbigeo))
+        in_array($pedidosUltra['CLIV_NUMERO_DOCUMENTO'], $exoneradosUbigeoLast))
         {
             $sqlServer->update("UPDATE " . TABLE_DATA_ULTRA_PROCESADO . " SET cod_pedido_pf_ultra = ? 
             WHERE id_data = ? and nro_documento = ?", [$pedidosUltra['PEDI_COD_PEDIDO'], $fila['id_data'], $fila['nro_documento']]);
@@ -142,7 +265,8 @@ foreach($resultados as $index => $fila)
 
         foreach($resultProcesados as $itemProcesado)
         {
-            if($itemProcesado['desc_distrito'] == $pedidosUltra['desc_distrito'] and $itemProcesado['desc_provincia'] == $pedidosUltra['desc_provincia'])
+            if($itemProcesado['desc_distrito'] == $pedidosUltra['desc_distrito'] and $itemProcesado['desc_provincia'] == $pedidosUltra['desc_provincia']
+            and $itemProcesado['desc_oferta'] == $pedidosUltra['OFTV_NOMBRE'])
             {
                 $coincidenciaPorDistrito = true;
                 $cantidadCoincidenciaPorDistrito++;
@@ -160,8 +284,11 @@ foreach($resultados as $index => $fila)
         $cantidadNoEncontrados++;
         continue;
 
-        print_r_f(['no encontrado 1', $fila, $pedidosUltra, $resultProcesados]);
+        // print_r_f(['no encontrado 1', $fila, $pedidosUltra, $resultProcesados]);
     }
+
+    $cantidadNoEncontrados++;
+    continue;
 
     if(!$pedidoEntontrado)
     {
