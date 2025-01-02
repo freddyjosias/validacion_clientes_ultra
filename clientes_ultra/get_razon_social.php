@@ -119,11 +119,11 @@ function main()
     return $data;
 }
 
-$resultados = main();
+/* $resultados = main();
 
 print_r_f(['resultados', $resultados]);
 
 
 // $directorio = get_data_equifax('20608536583');
 
-print_r_f('ok :)');
+print_r_f('ok :)'); */
