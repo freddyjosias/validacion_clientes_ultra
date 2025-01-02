@@ -28,6 +28,10 @@ function convertServDescriptionToFinalDescription($servDescription, $esMPLS)
     {
         return ['desc_servicio' => 'Migración Ultra 600', 'desc_producto' => 'Migración Ultra 600 Mbps'];
     }
+    else if($servDescription == 'Ultra Wifi Total' and $esMPLS)
+    {
+        return ['desc_servicio' => 'Ultra Wifi Total', 'desc_producto' => 'Ultra Wifi Total'];
+    }
 
     print_r_f(['desc_servicio' => $servDescription, 'desc_producto' => $prodDescription]);
 
@@ -58,7 +62,7 @@ function validateOfertaXVelocidad($oferta, $velocidad) {
 
     if($oferta == 'Ultra 1000' and $velocidad == '1 Gbps') {
         return true;
-    } else if(($oferta == 'Ultra 600' or $oferta == 'Ultra 1000') and $velocidad == '600 Mbps') {
+    } else if(($oferta == 'Ultra 600' or $oferta == 'Ultra 1000' or $oferta == 'ULTRA 600') and $velocidad == '600 Mbps') {
         return true;
     } else if($oferta == 'Ultra 600' and $velocidad == '600 Mbps') {
         return true;
@@ -67,6 +71,8 @@ function validateOfertaXVelocidad($oferta, $velocidad) {
     } else if($oferta == 'Ultra 800' and ($velocidad == '800 Mbps' or $velocidad == '1 Gbps')) {
         return true;
     } else if($oferta == 'Ultra 600' and $velocidad == '1 Gbps') {
+        return true;
+    } else if($oferta == 'Ultra Wifi Total' and $velocidad == '1 Gbps') {
         return true;
     }
 

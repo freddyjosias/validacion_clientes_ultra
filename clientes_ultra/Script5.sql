@@ -1,0 +1,91 @@
+
+return;
+
+select * from data_ultra_procesado_uat order by id_data
+SELECT * FROM data_ultra_procesado_prod order by id_data
+SELECT * FROM data_ultra_procesado_prod WHERE nro_documento = '000945609'
+
+
+
+
+
+select nro_documento, count(*) from data_ultra_procesado_uat group by nro_documento order by 2 desc
+
+select *
+from data_ultra_procesado_uat
+where nro_documento in (
+'08248924', '41389526', '20518934091','20608355074','20543977633','20139576498','20556284327','20430588355','20601646600','20607477923','20554669477','20612163546','20605210415','20612106194','20608379976','20605383646','20604263957','20565536657','20604712905','20601510198','06195885','000534172','08146147','08070416','46314812','42715411','46080472','45548918','10194352','10082401','10224571','08397119','23930190','76270644','75819391','41607395','08746730','44710951','08268886','40586445','09365343','74835687','06348730'
+) order by id_data
+
+
+select distinct nro_documento from data_ultra_procesado_uat
+
+select * from ECOM.ECOM_CLIENTE WHERE CLIV_NRO_RUC = '10702482572'
+-- 10702482572
+select CLIV_NRO_RUC, count(*)
+from [PE_OPTICAL_ADM_PROD_20241224_060004].ECOM.ECOM_CLIENTE
+WHERE (CLIV_NRO_RUC IN (
+	select distinct nro_documento from data_ultra_procesado_uat
+) OR
+CLIV_NRO_RUC IN ('00353411',
+'AG774859',
+'20190065',
+'01655107', 
+'A9155857',
+'00001262357',
+'945609',
+'AUN B49521',
+'00000733531',
+'00000574646',
+'20211001')) and CLIV_CODIGO_CLIENTE <> '788804'
+GROUP BY CLIV_NRO_RUC
+order by 2 desc
+
+
+
+select CONCAT('UPDATE CRM_CLIENTE SET cod_pago = ''', RIGHT(REPLICATE('0', 7) + CLIV_CODIGO_CLIENTE, 7),
+''' WHERE CLIV_NUMERO_DOCUMENTO = ''', CLIV_NRO_RUC, ''';')
+from [PE_OPTICAL_ADM_PROD_20241224_060004].ECOM.ECOM_CLIENTE
+WHERE (CLIV_NRO_RUC IN (
+	select distinct nro_documento from data_ultra_procesado_uat where nro_documento not in (
+	'000353411', '0AG774859', '020190065', '001655107', '020211001', '000945609', '0A9155857',
+	'UN B49521', '001262357', '000733531', '000574646')
+)
+OR
+CLIV_NRO_RUC IN ('00353411',
+'AG774859',
+'20190065',
+'01655107', 
+'A9155857',
+'00001262357',
+'945609',
+'AUN B49521',
+'00000733531',
+'00000574646',
+'20211001'))  and CLIV_CODIGO_CLIENTE <> '788804'
+
+
+select nro_documento, CLI.CLIV_NRO_RUC
+from data_ultra_procesado_uat d
+inner join [PE_OPTICAL_ADM_PROD_20241224_060004].ECOM.ECOM_CONTRATO CO ON d.ecom_id_contrato = CO.CONI_ID_CONTRATO
+INNER JOIN [PE_OPTICAL_ADM_PROD_20241224_060004].ECOM.ECOM_EMPRESA_CLIENTE EP ON CO.EMCI_ID_EMP_CLI = EP.EMCI_ID_EMP_CLI
+INNER JOIN [PE_OPTICAL_ADM_PROD_20241224_060004].ECOM.ECOM_CLIENTE CLI ON EP.CLII_ID_CLIENTE = CLI.CLII_ID_CLIENTE
+WHERE CLI.CLIV_NRO_RUC <> nro_documento
+
+
+update data_ultra_procesado_uat SET nro_documento = '945609' WHERE nro_documento = '000945609';
+update data_ultra_procesado_uat SET nro_documento = 'A9155857' WHERE nro_documento = '0A9155857';
+update data_ultra_procesado_uat SET nro_documento = 'AG774859' WHERE nro_documento = '0AG774859';
+update data_ultra_procesado_uat SET nro_documento = 'AUN B49521' WHERE nro_documento = 'UN B49521';
+
+
+/* '000353411', '020190065', '001655107', '020211001', '001262357', '000733531', '000574646'
+nro_documento	CLIV_NRO_RUC
+000353411	00353411
+020190065	20190065
+001655107	01655107
+020211001	20211001
+001262357	00001262357
+000733531	00000733531
+000574646	00000574646
+*/

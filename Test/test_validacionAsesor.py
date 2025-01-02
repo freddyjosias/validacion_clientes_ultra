@@ -49,7 +49,7 @@ class TestValidacionAsesor:
       else :
         break
 
-      if recorridos > 100:
+      if recorridos > 200:
         break
 
       self.driver.get(VALIDACION_URL)
@@ -85,7 +85,7 @@ class TestValidacionAsesor:
         self.util.wait_css(".confirm").click()
 
     except Exception:
-      print('Error clicking edit button')
+      print('')
 
 
     self.util.wait_id_clic("cb_resultado1").send_keys("A" + Keys.RETURN)

@@ -8,7 +8,8 @@ $sqlServer = new SQLServerConnection('10.1.4.20', 'PE_OPTICAL_ADM', 'PE_OPTICAL_
 $sqlServer->connect();
 
 
-$resultados = $sqlServer->select("SELECT id_data, nro_documento, desc_celular, desc_celular2, desc_correo FROM data_ultra_procesado");
+$resultados = $sqlServer->select("SELECT id_data, nro_documento, desc_celular, desc_celular2, desc_correo
+FROM data_ultra_procesado_uat where flg_validate_celular = 0 order by id_data");
 
 $cantidadActualizar = 0;
 $cantidadNoActualizar = 0;
@@ -56,6 +57,143 @@ foreach ($resultados as $fila)
     $resultadosContacto['desc_celular'] = $resultadosContacto['desc_celular'] ?? '999999999';
     $resultadosContacto['desc_telefono'] = $resultadosContacto['desc_telefono'] ?? '';
 
+    $forzarActualizarCorreo = false;
+    $auxCorreoAForzar = '';
+
+    if($fila['desc_correo'] == 'correo.migracion.win.ultra@ultra.com')
+    {
+        $auxCorreoAForzar = $sqlServer->select("SELECT cc.CTOV_EMAIL
+        FROM PE_OPTICAL_ADM_PORTAL.ECOM.ECOM_CLIENTE C
+        INNER JOIN PE_OPTICAL_ADM_PORTAL.ECOM.ECOM_CLIENTE_CONTACTO CC ON CC.CLII_ID_CLIENTE = C.CLII_ID_CLIENTE
+        WHERE C.CLIV_NRO_RUC = ?
+        ORDER BY CC.CTOD_FECHA_ALTA DESC", [$fila['nro_documento']]);
+
+        if(count($auxCorreoAForzar) > 0)
+        {
+            $primeraOpcion = '';
+
+            foreach($auxCorreoAForzar as $correo) {
+                if(filter_var($correo['CTOV_EMAIL'], FILTER_VALIDATE_EMAIL) and strlen($correo['CTOV_EMAIL']) <= 43)
+                {
+                    $primeraOpcion = $correo['CTOV_EMAIL'];
+                    break;
+                }
+            }
+
+            if($primeraOpcion != '') {
+                $resultadosContacto['desc_correo'] = $primeraOpcion;
+                $actualizarCorreo = true;
+                // print_r_f(['auxCorreoAForzar4', $auxCorreoAForzar, 'primeraOpcion', $primeraOpcion]);
+            }
+
+            // print_r_f(['auxCorreoAForzar', $auxCorreoAForzar]);
+        }
+    }
+
+    $forzarActualizarCelular = false;
+    $auxCelularAForzar = '';
+
+    if($fila['desc_celular'] == '999999999')
+    {
+        $auxCelularAForzar = $sqlServer->select("select * from (
+            SELECT PE_OPTICAL_ADM_PORTAL.dbo.ExtractLeadingNumbers(PE_OPTICAL_ADM_PORTAL.dbo.RemoveWhitespace(cc.CTOV_TELEFONO_CELU)) desc_celular, cc.CTOD_FECHA_ALTA
+            FROM PE_OPTICAL_ADM_PORTAL.ECOM.ECOM_CLIENTE C
+            INNER JOIN PE_OPTICAL_ADM_PORTAL.ECOM.ECOM_CLIENTE_CONTACTO CC ON CC.CLII_ID_CLIENTE = C.CLII_ID_CLIENTE
+            WHERE C.CLIV_NRO_RUC = ? AND cc.CTOV_TELEFONO_CELU IS NOT NULL
+            UNION
+            SELECT PE_OPTICAL_ADM_PORTAL.dbo.ExtractLeadingNumbers(PE_OPTICAL_ADM_PORTAL.dbo.RemoveWhitespace(cc.CTOV_TELEFONO_FIJO)) desc_celular, cc.CTOD_FECHA_ALTA
+            FROM PE_OPTICAL_ADM_PORTAL.ECOM.ECOM_CLIENTE C
+            INNER JOIN PE_OPTICAL_ADM_PORTAL.ECOM.ECOM_CLIENTE_CONTACTO CC ON CC.CLII_ID_CLIENTE = C.CLII_ID_CLIENTE
+            WHERE C.CLIV_NRO_RUC = ? AND cc.CTOV_TELEFONO_FIJO IS NOT NULL
+        ) A
+        where A.desc_celular <> '' AND A.desc_celular <> ?
+        ORDER BY A.CTOD_FECHA_ALTA DESC", [$fila['nro_documento'], $fila['nro_documento'], $fila['desc_celular2']]);
+
+        if(count($auxCelularAForzar) > 0)
+        {
+            $primeraOpcion = '';
+
+            foreach($auxCelularAForzar as $celular) {
+                if(is_string($celular['desc_celular']) and strlen($celular['desc_celular']) == 9 and is_numeric($celular['desc_celular'])
+                and $celular['desc_celular'][0] == '9')
+                {
+                    $primeraOpcion = $celular['desc_celular'];
+                    break;
+                }
+            }
+
+            if($primeraOpcion != '') {
+                $resultadosContacto['desc_celular'] = $primeraOpcion;
+                $actualizarCelular = true;
+                print_r_f(['auxCelularAForzar4', $auxCelularAForzar, 'primeraOpcion', $primeraOpcion]);
+            }
+            // print_r_f(['auxCelularAForzar', $auxCelularAForzar, $fila]);
+        }
+    }
+
+    $forzarActualizarTelefono = false;
+    $auxTelefonoAForzar = '';
+
+    if(!$forzarActualizarCelular and !$actualizarCelular and $fila['desc_celular2'] == '')
+    {
+        $auxTelefonoAForzar = $sqlServer->select("select * from (
+            SELECT PE_OPTICAL_ADM_PORTAL.dbo.ExtractLeadingNumbers(PE_OPTICAL_ADM_PORTAL.dbo.RemoveWhitespace(cc.CTOV_TELEFONO_CELU)) desc_celular, cc.CTOD_FECHA_ALTA
+            FROM PE_OPTICAL_ADM_PORTAL.ECOM.ECOM_CLIENTE C
+            INNER JOIN PE_OPTICAL_ADM_PORTAL.ECOM.ECOM_CLIENTE_CONTACTO CC ON CC.CLII_ID_CLIENTE = C.CLII_ID_CLIENTE
+            WHERE C.CLIV_NRO_RUC = ? AND cc.CTOV_TELEFONO_CELU IS NOT NULL
+            UNION
+            SELECT PE_OPTICAL_ADM_PORTAL.dbo.ExtractLeadingNumbers(PE_OPTICAL_ADM_PORTAL.dbo.RemoveWhitespace(cc.CTOV_TELEFONO_FIJO)) desc_celular, cc.CTOD_FECHA_ALTA
+            FROM PE_OPTICAL_ADM_PORTAL.ECOM.ECOM_CLIENTE C
+            INNER JOIN PE_OPTICAL_ADM_PORTAL.ECOM.ECOM_CLIENTE_CONTACTO CC ON CC.CLII_ID_CLIENTE = C.CLII_ID_CLIENTE
+            WHERE C.CLIV_NRO_RUC = ? AND cc.CTOV_TELEFONO_FIJO IS NOT NULL
+        ) A
+        where A.desc_celular <> ''
+        ORDER BY A.CTOD_FECHA_ALTA DESC", [$fila['nro_documento'], $fila['nro_documento']]);
+
+        if(count($auxTelefonoAForzar) > 0)
+        {
+            $todosComplenConSerCelular = true;
+            $primeraOpcion = '';
+
+            foreach($auxTelefonoAForzar as $telefono) {
+                if(is_string($telefono['desc_celular']) and strlen($telefono['desc_celular']) == 9 and is_numeric($telefono['desc_celular'])
+                and $telefono['desc_celular'][0] == '9')
+                {
+                    if($telefono['desc_celular'] <> $fila['desc_celular'])
+                    {
+                        $primeraOpcion = $telefono['desc_celular'];
+                        break;
+                    }
+                }
+                else {
+                    $todosComplenConSerCelular = false;
+                }
+            }
+
+            if(!$todosComplenConSerCelular and $primeraOpcion == '')
+            {
+                foreach($auxTelefonoAForzar as $telefono)
+                {
+                    if(is_string($telefono['desc_celular']) and strlen($telefono['desc_celular']) <= 9 and is_numeric($telefono['desc_celular']))
+                    {
+                        if($telefono['desc_celular'] <> $fila['desc_celular'])
+                        {
+                            $primeraOpcion = $telefono['desc_celular'];
+                            break;
+                        }
+                    }
+                }
+                // print_r_f(['auxTelefonoAForzar2', $auxTelefonoAForzar, 'primeraOpcion', $primeraOpcion]);
+            }
+
+            if($primeraOpcion != '') {
+                $resultadosContacto['desc_telefono'] = $primeraOpcion;
+                $actualizarTelefono = true;
+                // print_r_f(['auxTelefonoAForzar3', $auxTelefonoAForzar, 'primeraOpcion', $primeraOpcion]);
+            }
+        }
+    }
+
     if($resultadosContacto['desc_correo'] <> $fila['desc_correo'] or $resultadosContacto['desc_celular'] <> $fila['desc_celular'] or 
     $resultadosContacto['desc_telefono'] <> $fila['desc_celular2'])
     {
@@ -67,12 +205,40 @@ foreach ($resultados as $fila)
             ];
         }
 
+        $resultadosContacto['desc_celular'] = str_replace(' ', '', $resultadosContacto['desc_celular']);
+
         if($resultadosContacto['desc_celular'] <> $fila['desc_celular']) {
             $actualizarCelular = true;
+
+            $actualizarIntercambio = false;
+
+            if($fila['desc_celular'] != str_replace(' ', '', $fila['desc_celular'])) {
+                $fila['desc_celular'] = str_replace(' ', '', $fila['desc_celular']);
+                $actualizarIntercambio = true;
+            }
+            
+            if($resultadosContacto['desc_celular'] == '999999999' and strlen($fila['desc_celular']) <= 9 and
+            strlen($fila['desc_celular']) >= 6 and is_numeric($fila['desc_celular'])) {
+                $actualizarCelular = false;
+
+                if($actualizarIntercambio) {
+                    $resultadosContacto['desc_celular'] = $fila['desc_celular'];
+                    $actualizarCelular = true;
+                }
+            }
         }
 
-        if($resultadosContacto['desc_telefono'] <> $fila['desc_celular2']) {
+        $resultadosContacto['desc_telefono'] = trim($resultadosContacto['desc_telefono']);
+
+        if($resultadosContacto['desc_telefono'] <> $fila['desc_celular2'])
+        {
             $actualizarTelefono = true;
+
+            if($resultadosContacto['desc_telefono'] == '' and strlen($fila['desc_celular2']) <= 9
+            and is_numeric($fila['desc_celular2']))
+            {
+                $actualizarTelefono = false;
+            }
         }
     }
 
@@ -85,7 +251,7 @@ foreach ($resultados as $fila)
 
         if(strlen($resultadosContacto['desc_celular']) > 9 or strlen($resultadosContacto['desc_celular']) < 6 or !is_numeric($resultadosContacto['desc_celular']))
         {
-            print_r_f(['no coinciden - celular', strlen($resultadosContacto['desc_celular']), $resultadosContacto['desc_celular']]);
+            print_r_f(['no coinciden - celular', strlen($resultadosContacto['desc_celular']), $resultadosContacto['desc_celular'], $fila]);
         }
     }
 
@@ -120,20 +286,20 @@ foreach ($resultados as $fila)
 
     if($actualizarCelular) {
         $cantidadActualizarCelular++;
-
-        $sqlServer->update("UPDATE data_ultra_procesado SET desc_celular = ? WHERE id_data = ?", [$resultadosContacto['desc_celular'], $fila['id_data']]);
+        print_r_f(['actualizarCelular', 'resultadosContacto' => $resultadosContacto, 'fila' => $fila]);
+        $sqlServer->update("UPDATE data_ultra_procesado_uat SET desc_celular = ? WHERE id_data = ?", [$resultadosContacto['desc_celular'], $fila['id_data']]);
     }
 
     if($actualizarTelefono) {
         $cantidadActualizarTelefono++;
-
-        $sqlServer->update("UPDATE data_ultra_procesado SET desc_celular2 = ? WHERE id_data = ?", [$resultadosContacto['desc_telefono'], $fila['id_data']]);
+        // print_r_f(['actualizarTelefono', 'resultadosContacto' => $resultadosContacto, 'fila' => $fila]);
+        $sqlServer->update("UPDATE data_ultra_procesado_uat SET desc_celular2 = ? WHERE id_data = ?", [$resultadosContacto['desc_telefono'], $fila['id_data']]);
     }
 
     if($actualizarCorreo) {
         $cantidadActualizarCorreo++;
-
-        $sqlServer->update("UPDATE data_ultra_procesado SET desc_correo = ? WHERE id_data = ?", [$resultadosContacto['desc_correo'], $fila['id_data']]);
+        // print_r_f(['actualizarCorreo', $resultadosContacto, $fila]);
+        $sqlServer->update("UPDATE data_ultra_procesado_uat SET desc_correo = ? WHERE id_data = ?", [$resultadosContacto['desc_correo'], $fila['id_data']]);
     }
 
     // if($actualizarCelularFuente) {
@@ -142,6 +308,8 @@ foreach ($resultados as $fila)
     // }
 
     // print_r_f(['STOPPER', $resultadosContacto, $fila]);
+
+    $sqlServer->update("UPDATE data_ultra_procesado_uat SET flg_validate_celular = 1, updated_at = getdate() WHERE id_data = ?", [$fila['id_data']]);
 }
 
 // print_r_f($arrayActualizarCorreo);

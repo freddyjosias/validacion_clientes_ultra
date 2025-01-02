@@ -4,6 +4,7 @@ import os
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
+import pyperclip
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 
@@ -21,7 +22,7 @@ CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 IMAGEN_PATH = os.path.join(CURRENT_DIR, "contrato_generico.pdf")
 
-FECHA_TRAMO = "31-12-2024"
+FECHA_TRAMO = "05-01-2025"
 HORA_TRAMO = "12:00"
 
 class TestVenta:
@@ -36,6 +37,8 @@ class TestVenta:
     self.util.wait_id_clic("username").send_keys(CREDENTIALS["username"])
     self.util.wait_id_clic("password").send_keys(CREDENTIALS["password"])
     self.util.wait_id_clic("ingresar")
+
+    time.sleep(3)
 
   def teardown_method(self, method):
     self.driver.quit()
@@ -67,6 +70,7 @@ class TestVenta:
         self.plan = registro[22]
         self.desc_producto = registro[23]
         self.desc_phone = registro[24]
+        self.flg_check_nombres = registro[25]
 
         self.observacion = registro[3]
         self.id = registro[0]
@@ -77,7 +81,7 @@ class TestVenta:
 
     # Menu Nuevo Lead
     self.resultado = ""
-    time.sleep(3)
+
     self.util.test_driver().get(NUEVO_SEGUIMIENTO_URL)
     #Nuevo Lead
     self.util.wait_id_clic("btnNuevoLead")
@@ -87,12 +91,19 @@ class TestVenta:
     self.util.wait_id("loader-msj")
     self.util.wait_css_clic(".gf_btnPopup")
     self.util.wait_css(".btn-warning-degradate")
+
     time.sleep(3)
 
     self.util.wait_id_clic("continuar")
 
-    #tipo de vivienda
-    self.util.wait_id("tipo_servicio").find_element(By.XPATH, f"//option[. = '{self.tipoviv}']").click()
+    time.sleep(3)
+
+    #tipo de vivienda 'Multifamiliar'
+    try:
+      self.util.wait_id("tipo_servicio").find_element(By.XPATH, f"//option[. = '{self.tipoviv}']").click()
+    except Exception:
+      return 1
+
 
     if self.tipoviv != "Hogar":
       self.util.wait_id_clic("piso").send_keys(self.piso + Keys.RETURN)
@@ -110,29 +121,49 @@ class TestVenta:
     #documento
     self.util.wait_id("tipo_doc").find_element(By.XPATH, f"//option[. = '{self.tipodoc}']").click()
     self.util.wait_id_clic("documento_identidad").send_keys(self.dni)
+
+    dni_ingresado = self.util.wait_id_clic("documento_identidad").get_attribute("value")
+
+    if dni_ingresado != self.dni:
+      pyperclip.copy(self.dni)  # Copia el DNI al portapapeles
+      self.util.wait_id_clic("documento_identidad").clear()
+      self.util.wait_id_clic("documento_identidad").send_keys(Keys.CONTROL + "v")
+
     self.util.wait_id_clic("search_score_cliente")
     self.resultado = self.util.wait_css(".swal2-title").text
 
     if self.resultado == "ZONA DE RIESGO":
       self.util.wait_css_clic(".swal2-confirm")
-      time.sleep(3)
+      time.sleep(1)
       self.resultado = self.util.wait_css(".swal2-title").text
 
     #error/continuar
-    time.sleep(5)
+    time.sleep(4)
 
     if self.resultado != "Bien..." and self.resultado != "Aviso..." and self.resultado != "ZONA DE RIESGO":
       self.util.cerrar_prueba(5, self.util.wait_css(".swal2-html-container").text, self.id )
       return 1
 
     #nuevo cliente
-    self.util.wait_id_clic("nuevoCliente")
-    time.sleep(4)
+    try:
+        self.util.wait_id_clic("nuevoCliente")
+    except Exception:
+        return 1
+
+    time.sleep(1)
 
     if self.resultado == "Aviso...":
-      self.util.wait_id("cli_nom").send_keys(self.nombres)
-      self.util.wait_id("cli_ape_pat").send_keys(self.paterno)
-      self.util.wait_id("cli_ape_mat").send_keys(self.materno)
+      if self.flg_check_nombres == 1:
+        self.util.wait_id("cli_ape_pat").clear()
+        self.util.wait_id("cli_ape_mat").clear()
+        self.util.wait_id("cli_nom").clear()
+
+        self.util.wait_id("cli_ape_pat").send_keys(self.paterno)
+        self.util.wait_id("cli_ape_mat").send_keys(self.materno)
+        self.util.wait_id("cli_nom").send_keys(self.nombres)
+      else:
+        self.util.cerrar_prueba(23, "Error en los nombres", self.id)
+        return 0
 
     self.util.wait_id("cli_tel1").send_keys(self.celular)
     self.util.wait_id("cli_email").send_keys(self.correo)
@@ -153,48 +184,73 @@ class TestVenta:
     if self.resultado == "representante_legal":
       self.util.wait_id_clic("tipo_doc_representante").send_keys( self.rtipodoc + Keys.RETURN )
       self.util.wait_id("documento_identidad_representante").send_keys(self.rdni)
-      self.util.wait_id_clic("search_score_cliente_representante")
 
-      resultado_eval = self.util.wait_css(".swal2-title").text
+      resultado_eval = ""
+      saltar_alert_score = True
+
+      try:
+        self.util.wait_id_clic("search_score_cliente_representante")
+        saltar_alert_score = False
+      except Exception:
+        if len(self.util.wait_id("nom_representate").get_attribute("value")) < 10:
+          return 1
+
+      if not saltar_alert_score:
+          resultado_eval = self.util.wait_css(".swal2-title").text
 
       #error/continuar
       if resultado_eval == "Lo siento...":
-        time.sleep(2)
+        # time.sleep(2)
         self.util.cerrar_prueba(4, self.util.wait_css(".swal2-html-container").text, self.id )
         self.util.wait_css_clic(".swal2-confirm")
-        time.sleep(3)
+        # time.sleep(3)
         return 1
 
-      self.util.wait_css_clic(".swal2-confirm")
+      try:
+        if not saltar_alert_score:
+          self.util.wait_css_clic(".swal2-confirm")
+      except Exception:
+        return 1
 
       if resultado_eval == "Aviso...":
-        self.util.wait_id("nom_representate").send_keys(self.rnombres + " " + self.rpaterno + " " + self.rmaterno )
+        if self.flg_check_nombres == 1:
+          self.util.wait_id("nom_representate").send_keys(self.rpaterno + " " + self.rmaterno + " " + self.rnombres)
+        else:
+          self.util.cerrar_prueba(23, "Error en los nombres", self.id)
+          return 0
 
       self.util.wait_id("cli_tel1_representante").send_keys(self.celular)
       self.util.wait_id("cli_email_representante").send_keys(self.correo)
     else:
 
-      elemento = self.util.wait_id("cli_ape_pat")
+      elemento_ape_paterno = self.util.wait_id("cli_ape_pat")
+      elemento_ape_materno = self.util.wait_id("cli_ape_mat")
+      elemento_nombres = self.util.wait_id("cli_nom")
 
-      if len(elemento.get_attribute("value")) < 1:
-        self.util.wait_id("cli_ape_pat").send_keys( self.paterno )
-        self.util.wait_id("cli_nom").clear()
-        self.util.wait_id("cli_nom").send_keys( self.nombres )
+      if (len(elemento_ape_paterno.get_attribute("value")) < 1 or len(elemento_ape_materno.get_attribute("value")) < 1 or
+          len(elemento_nombres.get_attribute("value")) < 1):
 
-      elemento = self.util.wait_id("cli_ape_mat")
+        if self.flg_check_nombres == 1:
+            self.util.wait_id("cli_ape_pat").clear()
+            self.util.wait_id("cli_ape_mat").clear()
+            self.util.wait_id("cli_nom").clear()
 
-      if len(elemento.get_attribute("value")) < 1:
-        self.util.wait_id("cli_ape_mat").send_keys( self.materno )
+            self.util.wait_id("cli_ape_pat").send_keys(self.paterno)
+            self.util.wait_id("cli_ape_mat").send_keys(self.materno)
+            self.util.wait_id("cli_nom").send_keys(self.nombres)
+        else:
+            self.util.cerrar_prueba(23, "Error en los nombres", self.id)
+            return 0
     
     self.util.wait_css_clic(".scroll-y")
     self.util.wait_id_clic("add_customer_data")
     resultado_eval = self.util.wait_css(".swal2-title").text
 
     if resultado_eval != "Bien...":
-        time.sleep(1)
+        # time.sleep(1)
         self.util.cerrar_prueba(2, resultado_eval, self.id )
         self.util.wait_css_clic(".swal2-title")
-        time.sleep(3)
+        # time.sleep(3)
         return 1
 
     self.util.wait_css_clic(".swal2-confirm")
@@ -207,7 +263,7 @@ class TestVenta:
     if resultado_eval == "Lo siento...":
       self.util.cerrar_prueba(6, self.util.wait_css(".swal2-html-container").text, self.id)
       self.util.wait_css_clic(".swal2-confirm")
-      time.sleep(2)
+      # ime.sleep(2)
       return 1
 
     self.util.wait_css_clic(".swal2-confirm")
@@ -216,23 +272,31 @@ class TestVenta:
     #planes
     self.util.wait_id_clic("tipoBusqueda").find_element(By.XPATH, "//option[. = 'Internet']").click()
     
-    time.sleep(1)
+    time.sleep(1.5)
 
     self.util.wait_id_clic("filtroOferta").find_element(By.XPATH, f"//option[. = '{self.desc_producto}']").click()
     self.util.wait_name_clic("plan")
     self.util.wait_id_clic("continuar")
 
+    time.sleep(1)
     #registro final
     self.util.wait_id_clic("select2-venta_origen-container")
     self.util.wait_css_clic(".select2-search__field").send_keys("MIGRACION WIN-ULTRA"  + Keys.RETURN)
+
+    time.sleep(1)
+
     elemento = self.util.wait_id_clic("tramo_fecha")
+    time.sleep(1)
     self.driver.execute_script("arguments[0].removeAttribute('readonly')", elemento)
 
     elemento.send_keys(FECHA_TRAMO + Keys.RETURN)
 
-    time.sleep(1)
+    time.sleep(1.5)
 
     elemento = self.util.wait_id_clic("tramo_horario_rango")
+
+
+
     self.driver.execute_script("arguments[0].removeAttribute('readonly')", elemento)
 
     elemento.send_keys(HORA_TRAMO + Keys.RETURN)
@@ -242,8 +306,17 @@ class TestVenta:
     self.util.wait_id_clic("observacionesVenta").send_keys(self.observacion)
     self.util.wait_name("images[]").send_keys(IMAGEN_PATH)
 
+    time.sleep(2)
+
     self.util.wait_id_clic("btn_solicitar_ahora")
-    self.util.wait_css_clic(".swal2-confirm")
+
+    time.sleep(2)
+
+    try:
+      self.util.wait_css_clic(".swal2-confirm")
+    except Exception:
+      return 1
+
     self.util.cerrar_prueba(10, "ok", self.id)
     return 0
   

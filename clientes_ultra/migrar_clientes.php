@@ -4,12 +4,13 @@ require_once __DIR__ . '/../connection.php';
 require_once __DIR__ . '/../functions.php';
 require_once __DIR__ . '/get_razon_social.php';
 require_once __DIR__ . '/procesar_gpon.php';
+require_once __DIR__ . '/helper.php';
 
 // Para SQL Server
 $sqlServer = new SQLServerConnection('10.1.4.20', 'PE_OPTICAL_ADM', 'PE_OPTICAL_ERP', 'Optical123+');
 $sqlServer->connect();
 
-$postgres = new PostgreSQLConnection('10.1.4.25', '5432', 'opticalip_de_PORTAL', 'postgres', '');
+$postgres = new PostgreSQLConnection('10.1.4.25', '5432', 'opticalip_de', 'postgres', '');
 $postgres->connect();
 
 //$mysql = new MySQLConnection('10.1.4.17:33064', 'wincoreh_db_PROD_20241206_1230', 'desarrollo', 'D3v3$2023');
@@ -84,80 +85,6 @@ function migrar_mpls(array $data, $postgres, $sqlServer)
 
     // $data['AnchoBanda'] = $data['AnchoBanda'] == '1 Mbps' ? '1 Gbps' : $data['AnchoBanda'];
     $data['Distrito'] = strtoupper($data['Distrito']) == 'CERCADO DE LIMA' ? 'LIMA' : $data['Distrito'];
-    /* $resultados['provincia'] = ($resultados['provincia'] == 'HUAROCHIRI' and $resultados['distrito'] == 'SURCO'
-        and $resultados['region'] == 'LIMA') ? 'LIMA' : $resultados['provincia'];
-    
-    $resultados['cir_ancho_banda'] = $resultados['cir_ancho_banda'] == '1000000.00' ? '1000' : $resultados['cir_ancho_banda'];
-    $resultados['cir_ancho_banda'] = $resultados['cir_ancho_banda'] == '800000.00' ? '800' : $resultados['cir_ancho_banda'];
-    $resultados['cir_ancho_banda'] = $resultados['cir_ancho_banda'] == '600000.00' ? '600' : $resultados['cir_ancho_banda'];
-    
-    // Exceptions
-    if($data['Item'] == 23921 and $data['ClienteID'] == 7094 and $data['CircuitoCod'] == 37906  and  $data['VencimientoActual'] == '21/05/2023') {
-        $data['VencimientoActual'] = '21/05/2026';
-    }
-    
-    if($data['Item'] == 24098 and $data['ClienteID'] == 7168 and $data['CircuitoCod'] == 38748  and  $data['VencimientoActual'] == '23/06/2023') {
-        $data['VencimientoActual'] = '23/06/2026';
-    }
-    
-    if($data['Item'] == 25589 and $data['ClienteID'] == 7688 and $data['CircuitoCod'] == 45536  and  $data['VencimientoActual'] == '26/10/2023') {
-        $data['VencimientoActual'] = '26/10/2026';
-    }
-
-    $data['Distrito'] = $resultados['distrito']; */
-
-    /* if($data['Item'] == 24624 and $data['ClienteID'] == 11333 and $data['CircuitoCod'] == 41193  and  $data['Distrito'] == 'LIMA') {
-        $data['Distrito'] = 'BRENA';
-    }
-
-    if($data['Item'] == 24815 and $data['ClienteID'] == 9013 and $data['CircuitoCod'] == 42207  and  $data['Distrito'] == 'LIMA') {
-        $data['Distrito'] = 'SAN ISIDRO';
-    }
-
-    if($data['Item'] == 25768 and $data['ClienteID'] == 7742 and $data['CircuitoCod'] == 46383  and  $data['Distrito'] == 'LIMA') {
-        $data['Distrito'] = 'SAN ISIDRO';
-    }
-
-    if($data['Item'] == 25770 and $data['ClienteID'] == 10935 and $data['CircuitoCod'] == 46395  and  $data['Distrito'] == 'LIMA') {
-        $data['Distrito'] = 'SAN ISIDRO';
-    }
-
-    if($data['Item'] == 25819 and $data['ClienteID'] == 7755 and $data['CircuitoCod'] == 46644  and  $data['Distrito'] == 'LIMA') {
-        $data['Distrito'] = 'SANTIAGO DE SURCO';
-    }
-
-    if($data['Item'] == 25714 and $data['ClienteID'] == 7729 and $data['CircuitoCod'] == 46111  and  $data['Distrito'] == 'LIMA') {
-        $data['Distrito'] = 'LA MOLINA';
-    }
-    */
-
-    // VALIDAR CANTIDAD DE ACTIVOS QUE DEBERÍAN ESTAR EN SUSPENDIDOS
-    /*if($data['Estado'] == 'Activo' and $resultados['status_descripcion'] == 'Suspendido por Falta Pago') {
-        $data['Estado'] = 'Suspendido por Falta Pago';
-    }
-
-    if($data['Estado'] == 'Suspendido por Falta Pago' and $resultados['status_descripcion'] == 'Activo') {
-        $data['Estado'] = 'Activo';
-    }
-    
-    if($data['Item'] == 24786 and $data['ClienteID'] == 7408 and $data['CircuitoCod'] == 42075  and  $data['Estado'] == 'Activo') {
-        $data['Estado'] = 'Baja';
-        $data['BajaOperativa'] = '01/12/2024';
-    }
-    
-    if($data['Item'] == 25120 and $data['ClienteID'] == 7510 and $data['CircuitoCod'] == 43420  and  $data['Estado'] == 'Activo') {
-        $data['Estado'] = 'Baja';
-        $data['BajaOperativa'] = '26/11/2024';
-        $resultados['cir_ancho_banda'] = '600';
-    }
-
-    if($resultados['cli_codigo'] == 7261 and $resultados['cir_codigo'] == 40159 and $resultados['status_descripcion'] == 'Activo') {
-        $resultados['cir_ancho_banda'] = '800';
-    }
-
-    if($resultados['cli_codigo'] == 7489 and $resultados['cir_codigo'] == 42986 and $resultados['status_descripcion'] == 'Activo') {
-        $resultados['cir_ancho_banda'] = '600';
-    } */
 
     $resultados['serv_descripcion'] = trim($resultados['serv_descripcion']);
     $data['TipoServicio'] = trim($data['TipoServicio']);
@@ -191,6 +118,45 @@ function migrar_mpls(array $data, $postgres, $sqlServer)
     }
    
     // print_r_f([$data, $resultados]);
+
+    if($data['CircuitoCod'] == 66497) {
+        $data['VencimientoActual'] = '14/03/2026';
+    }
+
+    if($data['CircuitoCod'] == 45536) {
+        $data['VencimientoActual'] = '26/10/2026';
+    }
+
+    if($data['CircuitoCod'] == 56872) {
+        $data['VencimientoActual'] = '31/03/2027';
+    }
+
+    if($data['CircuitoCod'] == 53546) {
+        $data['BajaOperativa'] = '29/11/2024';
+    }
+
+    if($data['CircuitoCod'] == 72507) {
+        $data['BajaOperativa'] = '11/12/2024';
+    }
+
+    $circuitosSuspendidosExonerados = [48064, 59826, 77049, 211310];
+
+    if(in_array($data['CircuitoCod'], $circuitosSuspendidosExonerados)) {
+        $resultados['status_descripcion'] = 'Activo';
+    }
+
+    if($data['CircuitoCod'] == 42717) {
+        $data['Estado'] = 'Activo';
+    }
+
+    if($data['CircuitoCod'] == 39314) {
+        $data['AnchoBanda'] = '1 Gbps';
+    }
+
+//     print_r_f([$data, $resultados,
+//     $data['AnchoBanda'] == convertAnchoBandaToMbpsGbps($resultados['cir_ancho_banda']),
+//     validateOfertaXVelocidad($resultados['serv_descripcion'], convertAnchoBandaToMbpsGbps($resultados['cir_ancho_banda']))
+// ]);
    
     // Validaciones de datos
     $validaciones = [
@@ -252,7 +218,7 @@ function migrar_mpls(array $data, $postgres, $sqlServer)
         }
     }
 
-    // print_r_f([$data, $resultados]);
+    // print_r_f([$coincide, $data, $resultados]);
 
     if (!$coincide) {
         // Mostrar resultados de validación
@@ -318,90 +284,6 @@ function migrar_mpls(array $data, $postgres, $sqlServer)
     else
     {
         $directorio = get_data_equifax($resultados['cli_nro_ruc']);
-        
-        if(!isset($directorio['RazonSocial']) and !isset($directorio['PrimerNombre']))
-        {
-            $directorio = get_directorio_by_ruc($resultados['cli_nro_ruc'], $resultados['cli_razon_social']);
-
-            // print_r_f([$data, $resultados, $directorio]);
-
-            if(!isset($directorio) or !is_array($directorio)) {
-                $sqlServer->update("UPDATE data_ultra_raw SET flg_migrado = 1, desc_observacion = ? WHERE Item = ? AND ClienteID = ? AND CircuitoCod = ?",
-                ['No se encontró la Razón Social en Equifax', $data['Item'], $data['ClienteID'], $data['CircuitoCod']]);
-                return;
-            }
-        }
-
-        if(!isset($directorio['PrimerNombre'])) {
-            $directorio['PrimerNombre'] = '';
-            $directorio['ApellidoPaterno'] = '';
-            $directorio['ApellidoMaterno'] = '';
-        } else {
-            $data_aux = [
-                'desc_nombres' => '',
-                'desc_apellido_paterno' => '',
-                'desc_apellido_materno' => ''
-            ];
-
-            $aux = explode(' ', $directorio['RazonSocial']);
-
-            if(isset($aux[0])) {
-                $data_aux['desc_apellido_paterno'] = $aux[0];
-            }
-
-            if(isset($aux[1])) {
-                $data_aux['desc_apellido_materno'] = $aux[1];
-            }
-
-            if(isset($aux[2])) {
-                $data_aux['desc_nombres'] = $aux[2];
-            }
-
-            if(isset($aux[3])) {
-                $data_aux['desc_nombres'] .= ' ' . $aux[3];
-            }
-
-            if(isset($aux[4])) {
-                $data_aux['desc_nombres'] .= ' ' . $aux[4];
-            }
-
-            if(isset($aux[5])) {
-                $data_aux['desc_nombres'] .= ' ' . $aux[5];
-            }
-
-            if(isset($aux[6])) {
-                $data_aux['desc_nombres'] .= ' ' . $aux[6];
-            }
-
-            $isValidoAuxData = false;
-
-            if(strpos($directorio['RazonSocial'], $data_aux['desc_apellido_paterno'] . ' ' . $data_aux['desc_apellido_materno']) === 0) {
-                $isValidoAuxData = true;
-            }
-
-            if(is_array($directorio['PrimerNombre']) and count($directorio['PrimerNombre']) == 0 and $isValidoAuxData) {
-                $directorio['PrimerNombre'] = $data_aux['desc_nombres'];
-            }
-
-            if(is_array($directorio['ApellidoPaterno']) and count($directorio['ApellidoPaterno']) == 0 and $isValidoAuxData) {
-                $directorio['ApellidoPaterno'] = $data_aux['desc_apellido_paterno'];
-            }
-
-            if(is_array($directorio['ApellidoMaterno']) and count($directorio['ApellidoMaterno']) == 0 and $isValidoAuxData) {
-                $directorio['ApellidoMaterno'] = $data_aux['desc_apellido_materno'];
-            }
-
-
-            $directorio['RazonSocial'] = '';
-
-            if($directorio['ApellidoMaterno'] == '') {
-                $directorio['ApellidoMaterno'] = '.';
-            }
-
-            /* if(is_array($directorio['ApellidoMaterno']) and count($directorio['ApellidoMaterno']) == 0) {
-                $directorio['ApellidoMaterno'] = '.';
-            } */
-        }
 
         $dataRepresentante = [
             'desc_tipo_documento' => '',
@@ -412,17 +294,76 @@ function migrar_mpls(array $data, $postgres, $sqlServer)
         ];
 
         if(strlen($resultados['cli_nro_ruc']) == 11 and substr($resultados['cli_nro_ruc'], 0, 2) == '20') {
-            $dataRepresentante['desc_tipo_documento'] = 'DNI';
-            $dataRepresentante['desc_numero_documento'] = '88888888';
-            $dataRepresentante['desc_nombres'] = 'MIGRACION';
-            $dataRepresentante['desc_apellido_paterno'] = 'WIN';
-            $dataRepresentante['desc_apellido_materno'] = 'ULTRA';
+            // $dataRepresentante['desc_tipo_documento'] = 'DNI';
+            // $dataRepresentante['desc_numero_documento'] = '88888888';
+            // $dataRepresentante['desc_nombres'] = 'MIGRACION';
+            // $dataRepresentante['desc_apellido_paterno'] = 'WIN';
+            // $dataRepresentante['desc_apellido_materno'] = 'ULTRA';
+
+            $dataRepresentante = get_representante_by_ruc($resultados['cli_nro_ruc']);
+
+            if(is_null($dataRepresentante)) {
+                print_r_f(['No se encontró el representante en Equifax', $data, $resultados]);
+            }
         }
+
+        $flagNombresValidados = 0;
+        
+        if(!isset($directorio['RazonSocial']) and !isset($directorio['PrimerNombre']))
+        {
+            $directorio = get_directorio_by_ruc($resultados['cli_nro_ruc'], $resultados['cli_razon_social']);
+
+            if(!isset($directorio) or !is_array($directorio)) {
+                print_r_f(['100 - no se encontró el directorio', $data, $resultados, $directorio]);
+                $sqlServer->update("UPDATE data_ultra_raw SET flg_migrado = 1, desc_observacion = ? WHERE Item = ? AND ClienteID = ? AND CircuitoCod = ?",
+                ['No se encontró la Razón Social en Equifax', $data['Item'], $data['ClienteID'], $data['CircuitoCod']]);
+                return;
+            }
+
+            $flagNombresValidados = 1;
+        }
+
+        // print_r_f(['200', $flagNombresValidados, $directorio]);
+
+        if(strlen($resultados['cli_nro_ruc']) == 11 and substr($resultados['cli_nro_ruc'], 0, 2) == '20')
+        {
+            if(!isset($directorio['RazonSocial']) or !is_string($directorio['RazonSocial']) or strlen($directorio['RazonSocial']) < 5 or isset($directorio['PrimerNombre']) or isset($directorio['ApellidoPaterno']) or isset($directorio['ApellidoMaterno'])) {
+                print_r_f(['200', $directorio['RazonSocial'], $data, $resultados, $directorio]);
+            }
+            $directorio['PrimerNombre'] = '';
+            $directorio['ApellidoPaterno'] = '';
+            $directorio['ApellidoMaterno'] = '';
+        }
+        else if(!isset($directorio['RazonSocial']) or !is_string($directorio['RazonSocial']) or strlen($directorio['RazonSocial']) < 5 or 
+        !isset($directorio['PrimerNombre']) or !is_string($directorio['PrimerNombre']) or strlen($directorio['PrimerNombre']) < 5 or 
+        !isset($directorio['ApellidoPaterno']) or !is_string($directorio['ApellidoPaterno']) or strlen($directorio['ApellidoPaterno']) < 3 or 
+        !isset($directorio['ApellidoMaterno']) or !is_string($directorio['ApellidoMaterno']) or strlen($directorio['ApellidoMaterno']) < 4)
+        {
+            if($resultados['cli_nro_ruc'] == '47659418')
+            {
+                $directorio = [
+                    'RazonSocial' => '',
+                    'PrimerNombre' => 'MEAD',
+                    'ApellidoPaterno' => 'ARNOVITZ',
+                    'ApellidoMaterno' => ' '
+                ];
+
+                $flagNombresValidados = 1;
+            }
+            else {
+                print_r_f(['300', $directorio['RazonSocial'],  $directorio, $data, $resultados]);
+            }
+            
+        } else {
+            $directorio['RazonSocial'] = '';
+        }
+
+        // print_r_f($directorio);
 
         $resultadosContacto = $sqlServer->select("SET NOCOUNT ON
 
-        DECLARE @NRO_RUC VARCHAR(50) = ?
-        DECLARE @CORREO VARCHAR(30), @CELULAR1 VARCHAR(30), @CELULAR2 VARCHAR(30), @ID_CLIENTE_ECOM INT
+        DECLARE @NRO_RUC VARCHAR(100) = ?
+        DECLARE @CORREO VARCHAR(100), @CELULAR1 VARCHAR(100), @CELULAR2 VARCHAR(100), @ID_CLIENTE_ECOM INT
 
         SET @CORREO = (SELECT top 1 CTOV_EMAIL FROM data_ultra_contacto where CLIV_NRO_RUC = @NRO_RUC AND CTOV_EMAIL IS NOT NULL ORDER BY CTOD_FECHA_ALTA desc);
         SET @CELULAR1 = (SELECT top 1 CTOV_TELEFONO_CELU FROM data_ultra_contacto where CLIV_NRO_RUC = @NRO_RUC AND CTOV_TELEFONO_CELU IS NOT NULL ORDER BY CTOD_FECHA_ALTA desc);
@@ -454,7 +395,7 @@ function migrar_mpls(array $data, $postgres, $sqlServer)
 
         if(count($resultadosDireccion) != 1) {
             $resultadosDireccion =[
-                'tipo_domicilio' => 'HOGAR',
+                'tipo_domicilio' => 'Hogar',
                 'nro_piso' => '',
                 'nro_dpto' => '',
                 'nombre_condominio' => '',
@@ -466,7 +407,7 @@ function migrar_mpls(array $data, $postgres, $sqlServer)
             if(strlen($resultadosDireccion['DIRV_NOMBRE_NIV']) < 2 and (int) $resultadosDireccion['DIRV_NOMBRE_NIV'] < 3) 
             {
                 $resultadosDireccion =[
-                    'tipo_domicilio' => 'HOGAR',
+                    'tipo_domicilio' => 'Hogar',
                     'nro_piso' => '',
                     'nro_dpto' => '',
                     'nombre_condominio' => '',
@@ -475,7 +416,7 @@ function migrar_mpls(array $data, $postgres, $sqlServer)
             }
             else {
                 $resultadosDireccion =[
-                    'tipo_domicilio' => 'MULTIFAMILIAR',
+                    'tipo_domicilio' => 'Multifamiliar',
                     'nro_piso' => $resultadosDireccion['DIRV_NOMBRE_NIV'],
                     'nro_dpto' => $resultadosDireccion['DIRV_NOMBRE_NIV'],
                     'nombre_condominio' => '',
@@ -502,19 +443,17 @@ function migrar_mpls(array $data, $postgres, $sqlServer)
             return;
         }
 
-        if($resultados['status_descripcion'] != 'Activo') {
-            $sqlServer->update("UPDATE data_ultra_raw SET flg_migrado = 1, desc_observacion = ? WHERE Item = ? AND ClienteID = ? AND CircuitoCod = ?",
-            ['El estado del cliente es ' . $resultados['status_descripcion'], $data['Item'], $data['ClienteID'], $data['CircuitoCod']]);
-            return;
-        }
+        if(!is_null($resultados['cir_fecha_baja_operativa']))
+        {
+            $docsExonerados = ['09341200', '47964244', '42280835', '06250122', '09336711', '20552270127',
+            '43384577'];
 
-        if(!is_null($resultados['cir_fecha_baja_operativa'])) {
-            $sqlServer->update("UPDATE data_ultra_raw SET flg_migrado = 1, desc_observacion = ? WHERE Item = ? AND ClienteID = ? AND CircuitoCod = ?",
-            ['La fecha de baja operativa es ' . $resultados['cir_fecha_baja_operativa'], $data['Item'], $data['ClienteID'], $data['CircuitoCod']]);
-            return;
+            if(!in_array($resultados['cli_nro_ruc'], $docsExonerados))
+            {
+                print_r_f(['Activo1', 'cir_fecha_baja_operativa' => $resultados['cir_fecha_baja_operativa'], $resultados]);
+            }
+            $resultados['cir_fecha_baja_operativa'] = null;
         }
-
-        // print_r_f([$resultadosContacto, $resultados]);
 
         if ($resultados['cli_codigo_ecom'] != $resultadosContacto['id_cliente_ecom'] OR is_null($resultadosContacto['id_cliente_ecom'])) {
             $sqlServer->update("UPDATE data_ultra_raw SET flg_migrado = 1, desc_observacion = ? WHERE Item = ? AND ClienteID = ? AND CircuitoCod = ?",
@@ -523,10 +462,10 @@ function migrar_mpls(array $data, $postgres, $sqlServer)
         }
 
         $datosEcom = $sqlServer->select("SELECT CO.CONI_ID_CONTRATO, EC.EMCI_ID_EMP_CLI, S.SERI_ID_SERVICIO, EC.EMPI_ID_EMPRESA
-        FROM  PE_OPTICAL_ADM_PROD_20241222_071629.ECOM.ECOM_CLIENTE CLI -- ON C.cli_codigo_ecom = CLI.CLII_ID_CLIENTE
-        INNER JOIN PE_OPTICAL_ADM_PROD_20241222_071629.ECOM.ECOM_EMPRESA_CLIENTE EC ON CLI.CLII_ID_CLIENTE = EC.CLII_ID_CLIENTE
-        INNER JOIN PE_OPTICAL_ADM_PROD_20241222_071629.ECOM.ECOM_CONTRATO CO ON EC.EMCI_ID_EMP_CLI = CO.EMCI_ID_EMP_CLI
-        INNER JOIN PE_OPTICAL_ADM_PROD_20241222_071629.ECOM.ECOM_SERVICIO S ON CO.CONI_ID_CONTRATO = S.CONI_ID_CONTRATO -- AND S.SERI_ID_SERVICIO = CIR.cir_codigo_ecom
+        FROM  PE_OPTICAL_ADM_PROD_20241224_060004.ECOM.ECOM_CLIENTE CLI -- ON C.cli_codigo_ecom = CLI.CLII_ID_CLIENTE
+        INNER JOIN PE_OPTICAL_ADM_PROD_20241224_060004.ECOM.ECOM_EMPRESA_CLIENTE EC ON CLI.CLII_ID_CLIENTE = EC.CLII_ID_CLIENTE
+        INNER JOIN PE_OPTICAL_ADM_PROD_20241224_060004.ECOM.ECOM_CONTRATO CO ON EC.EMCI_ID_EMP_CLI = CO.EMCI_ID_EMP_CLI
+        INNER JOIN PE_OPTICAL_ADM_PROD_20241224_060004.ECOM.ECOM_SERVICIO S ON CO.CONI_ID_CONTRATO = S.CONI_ID_CONTRATO -- AND S.SERI_ID_SERVICIO = CIR.cir_codigo_ecom
         WHERE EC.EMPI_ID_EMPRESA IN (10, 20) AND CLI.CLIV_NRO_RUC = ? AND CLI.CLII_ID_CLIENTE = ? AND S.SERI_ID_SERVICIO = ?",
         [$resultados['cli_nro_ruc'], $resultadosContacto['id_cliente_ecom'], $resultados['cir_codigo_ecom']]);
 
@@ -538,31 +477,92 @@ function migrar_mpls(array $data, $postgres, $sqlServer)
 
         $datosEcom = $datosEcom[0];
 
-        $periodoEmision = $sqlServer->select("SELECT TOP 1 C.COMV_PERIODO_COMPROBANTE
-        FROM PE_OPTICAL_ADM_PROD_20241222_071629.ECOM.COMPROBANTE C
-        INNER JOIN PE_OPTICAL_ADM_PROD_20241222_071629.ECOM.COMPROBANTE_DET CD ON C.COMC_COD_COMPROBANTE = CD.COMC_COD_COMPROBANTE
-        WHERE C.ESTI_ID_ESTADO = 9 AND C.TCOI_ID_TIPOCOMPRO = 6 AND C.COMC_COD_ENTIDAD = ? AND CD.SERI_ID_SERVICIO = ?
-        ORDER BY 1 DESC", [$resultadosContacto['id_cliente_ecom'], $resultados['cir_codigo_ecom']]);
+        // print_r_f([$resultadosContacto, $resultados]);
 
-        if(count($periodoEmision) != 1) {
-            // print_r_f([$periodoEmision, $resultadosContacto['id_cliente_ecom'], $resultados['cir_codigo_ecom']]);
-            $sqlServer->update("UPDATE data_ultra_raw SET flg_migrado = 1, desc_observacion = ? WHERE Item = ? AND ClienteID = ? AND CircuitoCod = ?",
-            ['No se encontró alguna emision en ECOM', $data['Item'], $data['ClienteID'], $data['CircuitoCod']]);
-            return;
+        $periodoEmision = $sqlServer->select("SELECT desc_situacion, cod_circuito
+        FROM data_ultra_emision_202412
+        where cli_nro_doc = ? and flg_status_habil = 1;", [$resultados['cli_nro_ruc']]);
+
+        if(count($periodoEmision) != 1)
+        {
+            if(count($periodoEmision) == 0) {
+                print_r_f(['401', $periodoEmision, $resultados]);
+            }
+
+            $encontrado = false;
+            $cantidadEncontrado = 0;
+            $auxPeriodoEmision = [];
+
+            foreach($periodoEmision as $item) {
+                if($item['cod_circuito'] == $resultados['cir_codigo']) {
+                    $encontrado = true;
+                    $cantidadEncontrado++;
+                    $auxPeriodoEmision[] = $item;
+                }
+            }
+
+            if($encontrado == false or $cantidadEncontrado > 1 or count($auxPeriodoEmision) != 1) {
+                print_r_f(['402', $periodoEmision, $resultados]);
+            }
+
+            $periodoEmision = $auxPeriodoEmision;
+
+            // print_r_f(['400', $periodoEmision, $resultados]);
+            // $sqlServer->update("UPDATE data_ultra_raw SET flg_migrado = 1, desc_observacion = ? WHERE Item = ? AND ClienteID = ? AND CircuitoCod = ?",
+            // ['No tiene comprobante generado en el periodo 202412', $data['Item'], $data['ClienteID'], $data['CircuitoCod']]);
+            // return;
         }
 
-        $periodoEmision = $periodoEmision[0]['COMV_PERIODO_COMPROBANTE'];
+        $periodoEmision = $periodoEmision[0];
 
-        if($periodoEmision != '202411') {
-            $sqlServer->update("UPDATE data_ultra_raw SET flg_migrado = 1, desc_observacion = ? WHERE Item = ? AND ClienteID = ? AND CircuitoCod = ?",
-            ['El último periodo de emision con estado COBRADO es ' . $periodoEmision, $data['Item'], $data['ClienteID'], $data['CircuitoCod']]);
-            return;
+        $desc_activacion_habil = 'NO HABILITADO';
+
+        if($periodoEmision['desc_situacion'] == 'COBR') {
+            $desc_activacion_habil = 'HABILITADO';
         }
 
-        print_r_f($periodoEmision);
+        if($periodoEmision['cod_circuito'] == 0) {
+            print_r_f(['No se encontró el circuito en ECOM', $data['Item'], $data['ClienteID'], $data['CircuitoCod']]);
+        }
+
+        if($resultados['serv_descripcion'] == 'Ultra 1000') {
+            $resultados['serv_descripcion'] = 'Migración Ultra 1000 - MPLS';
+        }
+
+        if($resultados['serv_descripcion'] == 'Ultra 800') {
+            $resultados['serv_descripcion'] = 'Migración Ultra 800 - MPLS';
+        }
+
+        if($resultados['serv_descripcion'] == 'Ultra 600') {
+            $resultados['serv_descripcion'] = 'Migración Ultra 600 - MPLS';
+        }
+
+        $planesValidos = ['Migración Ultra 600', 'Migración Ultra 600 - MPLS', 'Migración Ultra 800 - MPLS',
+        'Migración Ultra 1000 - MPLS', 'Ultra Wifi Total'];
+
+        if(!in_array($resultados['serv_descripcion'], $planesValidos)) {
+            print_r_f(['El plan no es valido', $data['Item'], $data['ClienteID'], $data['CircuitoCod']]);
+        }
+
+        $productos = [
+            'Migración Ultra 600 - MPLS' => 'Migración Ultra 600 Mbps - MPLS',
+            'Migración Ultra 800 - MPLS' => 'Migración Ultra 800 Mbps - MPLS',
+            'Migración Ultra 1000 - MPLS' => 'Migración Ultra 1000 Mbps - MPLS',
+            'Ultra Wifi Total' => 'Ultra Wifi Total'
+        ];
+
+        $productoFinal = $productos[$resultados['serv_descripcion']];
+
+        if(!is_string($productoFinal) or strlen($productoFinal) < 5) {
+            print_r_f(['El plan no es valido', $data['Item'], $data['ClienteID'], $data['CircuitoCod']]);
+        }
+        
+        // print_r_f([$resultados['serv_descripcion'], $productoFinal]);
+
+        // print_r_f($periodoEmision);
 
         // Add INSERT statement
-        $insertQuery = "INSERT INTO data_ultra_procesado (
+        $insertQuery = "INSERT INTO data_ultra_procesado_uat (
             nro_documento, razon_social, id_cliente_intranet, id_cliente_ultra, 
             id_cliente_ecom, cod_pedido_ultra, cod_circuito, desc_circuito,
             razon_social_intranet, fec_vence_contrato, fec_baja, ancho_banda,
@@ -571,19 +571,22 @@ function migrar_mpls(array $data, $postgres, $sqlServer)
             desc_correo, desc_celular, desc_celular2, tipo_documento,
             tipo_vivienda, nro_piso, nro_departamento, nombre_condominio, tipo_predio,
             ecom_id_contrato, ecom_id_servicio, periodo_ultima_emision,
-            representante_tipo_doc, representante_nro_doc, representante_nombres, representante_ape_paterno, representante_ape_materno
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            representante_tipo_doc, representante_nro_doc, representante_nombres, representante_ape_paterno, representante_ape_materno,
+            desc_producto, status_ingreso_venta, torre_bloque, cod_pedido_pf_ultra, desc_activacion_habil, desc_observacion_activacion,
+            flg_check_nombres
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 
+        1, '', 0, ?, 'OK', ?)";
 
         $params = [
-            $resultados['cli_nro_ruc'],
-            $directorio['RazonSocial'],
+            trim($resultados['cli_nro_ruc']),
+            trim($directorio['RazonSocial']),
             $resultados['cli_codigo'],
             0,
             $resultadosContacto['id_cliente_ecom'], // id_cliente_ecom (default to 0 since not provided)
             0,
             $resultados['cir_codigo'],
             $resultados['cir_descripcion'],
-            $resultados['cli_razon_social'],
+            trim($resultados['cli_razon_social']),
             $resultados['cir_fecha_vencimiento'],
             $resultados['cir_fecha_baja_operativa'],
             convertAnchoBandaToMbpsGbps($resultados['cir_ancho_banda']),
@@ -595,27 +598,30 @@ function migrar_mpls(array $data, $postgres, $sqlServer)
             $resultados['distrito'],
             $resultados['provincia'],
             $resultados['region'],
-            // $resultados['serv_descripcion'] . ' MPLS',
-            $directorio['PrimerNombre'],
-            $directorio['ApellidoPaterno'],
-            $directorio['ApellidoMaterno'], 
-            // $resultadosContacto['desc_correo'],
-            // $resultadosContacto['desc_celular'],
-            // $resultadosContacto['desc_telefono'],
-            $resultados['tipo_documento'],
-            $resultadosDireccion['tipo_domicilio'],
-            $resultadosDireccion['nro_piso'],
-            $resultadosDireccion['nro_dpto'],
-            $resultadosDireccion['nombre_condominio'],
-            $resultadosDireccion['tipo_predio'],
+            trim($resultados['serv_descripcion']),
+            trim($directorio['PrimerNombre']),
+            trim($directorio['ApellidoPaterno']),
+            trim($directorio['ApellidoMaterno']), 
+            trim($resultadosContacto['desc_correo']),
+            trim($resultadosContacto['desc_celular']),
+            trim($resultadosContacto['desc_telefono']),
+            trim($resultados['tipo_documento']),
+            trim($resultadosDireccion['tipo_domicilio']),
+            trim($resultadosDireccion['nro_piso']),
+            trim($resultadosDireccion['nro_dpto']),
+            trim($resultadosDireccion['nombre_condominio']),
+            trim($resultadosDireccion['tipo_predio']),
             $datosEcom['CONI_ID_CONTRATO'],
             $datosEcom['SERI_ID_SERVICIO'],
-            // $periodoEmision,
-            // $dataRepresentante['desc_tipo_documento'],
-            // $dataRepresentante['desc_numero_documento'],
-            // $dataRepresentante['desc_nombres'],
-            // $dataRepresentante['desc_apellido_paterno'],
-            // $dataRepresentante['desc_apellido_materno']
+            '202412',
+            $dataRepresentante['desc_tipo_documento'],
+            $dataRepresentante['desc_numero_documento'],
+            $dataRepresentante['desc_nombres'],
+            $dataRepresentante['desc_apellido_paterno'],
+            $dataRepresentante['desc_apellido_materno'],
+            $productoFinal,
+            $desc_activacion_habil,
+            $flagNombresValidados
         ];
 
         // print_r_f($params);
@@ -624,7 +630,7 @@ function migrar_mpls(array $data, $postgres, $sqlServer)
 
         if($result == false)
         {
-            echo "Error al insertar datos en la tabla data_ultra_procesado";
+            echo "Error al insertar datos en la tabla data_ultra_procesado_uat";
             print_r_f($result);
             return;
         }
@@ -788,6 +794,17 @@ function limpiarCaracteresUnicode($texto) {
 }
 
 function get_directorio_by_ruc($ruc, $razon_social) {
+
+    if($ruc == '49033215') {
+        return [
+            'RazonSocial' => 'BARRON DAVALOS MINERVA IDALIA',
+            'PrimerNombre' => 'MINERVA IDALIA',
+            'ApellidoPaterno' => 'BARRON',
+            'ApellidoMaterno' => 'DAVALOS'
+        ];
+    }
+
+    return null;
 
     if(substr($ruc, 0, 2) == '20' and strlen($ruc) == 11) {
         return [
@@ -959,4 +976,74 @@ function get_directorio_by_ruc($ruc, $razon_social) {
 
     return null;
 }
+
+function get_representante_by_ruc($ruc)
+{
+    if($ruc == '20605718362') {
+        return [
+            'desc_tipo_documento' => 'DNI',
+            'desc_numero_documento' => '44626027',
+            'desc_nombres' => 'ROMINA',
+            'desc_apellido_paterno' => 'CACERES',
+            'desc_apellido_materno' => 'RAFFO'
+        ];
+    }
+    else if($ruc == '20612163546') {
+        return [
+            'desc_tipo_documento' => 'DNI',
+            'desc_numero_documento' => '45080108',
+            'desc_nombres' => 'IOANIS',
+            'desc_apellido_paterno' => 'PATSIAS',
+            'desc_apellido_materno' => 'MORALES'
+        ];
+    }
+    else if($ruc == '20605383646') {
+        return [
+            'desc_tipo_documento' => 'DNI',
+            'desc_numero_documento' => '45868175',
+            'desc_nombres' => 'CESAR ALONZO',
+            'desc_apellido_paterno' => 'DIAZ',
+            'desc_apellido_materno' => 'HUIZA'
+        ];
+    }
+    else if($ruc == '20605421556') {
+        return [
+            'desc_tipo_documento' => 'DNI',
+            'desc_numero_documento' => '41697395',
+            'desc_nombres' => 'JORGE ELMER',
+            'desc_apellido_paterno' => 'CHAVEZ',
+            'desc_apellido_materno' => 'ALATRISTA'
+        ];
+    }
+    else if($ruc == '20543977633') {
+        return [
+            'desc_tipo_documento' => 'DNI',
+            'desc_numero_documento' => '10808793',
+            'desc_nombres' => 'ALVARO EDUARDO',
+            'desc_apellido_paterno' => 'BORDA',
+            'desc_apellido_materno' => 'MALPARTIDA'
+        ];
+    }
+    else if($ruc == '20552270127') {
+        return [
+            'desc_tipo_documento' => 'DNI',
+            'desc_numero_documento' => '44067199',
+            'desc_nombres' => 'DANIEL',
+            'desc_apellido_paterno' => 'FERRO',
+            'desc_apellido_materno' => 'VALDIVIA'
+        ];
+    }
+    else if($ruc == '20516778203') {
+        return [
+            'desc_tipo_documento' => 'DNI',
+            'desc_numero_documento' => '08784274',
+            'desc_nombres' => 'JORGE ANTONIO',
+            'desc_apellido_paterno' => 'CENTENO',
+            'desc_apellido_materno' => 'HUAMAN'
+        ];
+    }
+    
+    return null;
+}
+
 

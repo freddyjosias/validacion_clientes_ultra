@@ -310,10 +310,268 @@ SELECT status_ingreso_venta, status_resultado, * FROM data_ultra_procesado_last 
 
 
 -- UAT
-SELECT status_ingreso_venta, status_resultado, * FROM data_ultra_procesado_uat order by nro_documento 
+
+select IdPedido, CircuitoCod, RUC, RazonSocial, TipoServicio, Tecnologia, desc_observacion
+from data_ultra_raw
+-- where  desc_observacion in ('El último periodo de emision con estado COBRADO es 202403')
+where IdPedido in (-1
+) or CircuitoCod in (87938,
+229280)
+
+select IdPedido, CircuitoCod, RUC, RazonSocial, TipoServicio, Tecnologia, desc_observacion
+from data_ultra_raw
+where RUC in ('70089575', 
+'42435648', 
+'17842150')
+
+select CAST(cli_nro_doc	AS BIGINT)
+from data_ultra_emision_202412
+
+/*
+17842150
+42435648
+70089575
+*/
+
+select RUC, count(*)
+from data_ultra_raw
+where RUC in ('75056788') -- 002027937
+group by RUC
+having count(*) > 1
+
+SELECT *
+FROM data_ultra_emision_202412
+where cli_nro_doc in ('75056788'
+)
+
+SELECT desc_situacion, cod_circuito
+FROM data_ultra_emision_202412
+where cli_nro_doc = '10058402' and flg_status_habil = 1;
+
+select desc_observacion, * 
+from data_ultra_raw
+where  desc_observacion in ('Pedido Excel: 5000084 - Pedido WE: 5000084 - Nro Documento Excel: 20603146663 - Nro Documento WE: 10702482572')
+ORDER BY 1
+
+SELECT * FROM data_ultra_raw where RUC = '20516778203'
+SELECT * FROM data_ultra_raw where CircuitoCod in (48064, 59826, 77049, 211310)
+select * from data_ultra_emision_202412 where cli_nro_doc in ('20516778203')
+select * from data_ultra_emision_202412 where cod_circuito in (48064, 59826, 77049, 211310)
+select * from data_ultra_emision_202412 where ID_PEDIDO in (5000084)
+
+select * from data_ultra_procesado where cod_pedido_ultra = '5000110'
+
+select desc_observacion, COUNT(*) cantidad
+from data_ultra_raw where flg_migrado = 1 and desc_observacion <> 'OK'
+GROUP BY desc_observacion
+
+
+
+select desc_observacion, COUNT(*) 
+from data_ultra_raw where flg_migrado = 1 and desc_observacion <> 'OK'
+AND desc_observacion not in ('El estado del cliente es Baja',
+'El estado del cliente es Suspendido por Falta Pago',
+'El estado del cliente es Suspendido Solicitud Cliente',
+'El último periodo de emision con estado COBRADO es 202403',
+'El último periodo de emision con estado COBRADO es 202412',
+'Estado Excel: Activo - Estado WE: Baja',
+'No se encontró alguna emision en ECOM'
+)
+GROUP BY desc_observacion
+
+select desc_observacion, COUNT(*) 
+from data_ultra_raw where flg_migrado = 1 and desc_observacion <> 'OK'
+GROUP BY desc_observacion
+
+
+
+select num_documento, count(*)
+from data_raw_ultra_bk2
+GROUP BY num_documento
+HAVING COUNT(*) > 1
+order by 2 desc
+
+SELECT *
+FROM data_ultra_emision_202412
+WHERE ID_PEDIDO <> 0
+
+select b.cod_pedido_ultra, e.ID_PEDIDO, b.desc_ultimo_periodo, '202412' last_periodo
+from data_raw_ultra_bk2 b
+INNER join data_ultra_emision_202412 e ON b.cod_pedido_ultra = e.ID_PEDIDO
+
+UPDATE b
+SET 
+    b.desc_ultimo_periodo = '202412'
+FROM data_raw_ultra_bk2 b
+INNER JOIN data_ultra_emision_202412 e
+    ON b.cod_pedido_ultra = e.ID_PEDIDO
+
+
+select ID_PEDIDO, COUNT(*)
+from data_ultra_emision_202412
+group by ID_PEDIDO
+HAVING COUNT(*) > 1
+ORDER BY 2 DESC
+
+
+select *
+from data_ultra_emision_202412
+
+select * from data_ultra_raw where desc_observacion in (
+'Plan Excel: ULTRA 600 - Plan WE: ULTRA 600 - Ancho Banda Excel: 600 Mbps - Ancho Banda WE: 600 - Ancho Banda WE Convertido: 600 Mbps',
+'Plan Excel: Ultra Wifi Total - Plan WE: Ultra Wifi Total - Ancho Banda Excel: 1 Mbps - Ancho Banda WE: 1000.00 - Ancho Banda WE Convertido: 1 Gbps'
+)
+
+select * from data_ultra_raw where flg_migrado = 1 and desc_observacion LIKE 'El último periodo de emision con estado COBRADO es 202403%'
+
+UPDATE data_ultra_raw SET flg_migrado = 0 WHERE CircuitoCod in (117881)
+
+select * from data_ultra_raw where flg_migrado = 0
+select desc_observacion, * from data_ultra_raw where CircuitoCod in (39314, 117881)
+-- update data_ultra_raw set flg_migrado = 0 where IdPedido = 5000084
+
+select * from PE_OPTICAL_ADM_PROD_20241224_060004.ECOM.ECOM_CLIENTE WHERE CLIV_NRO_RUC = '10702482572'
+
+alter table data_ultra_procesado_uat add flg_validate_plan TINYINT NOT NULL DEFAULT 0
+alter table data_ultra_procesado_uat add flg_validate_celular TINYINT NOT NULL DEFAULT 0
+
+
+select status_ingreso_venta, status_resultado, razon_social_intranet, nombres, ape_paterno, ape_materno,
+* from data_ultra_procesado_uat order by nro_documento;
+
 select * from data_ultra_procesado_uat
+
+select status_ingreso_venta, status_resultado, razon_social_intranet, nombres, ape_paterno, ape_materno,
+* from data_ultra_procesado_uat where status_ingreso_venta NOT IN (1, 10) order by nro_documento;
+
+select * from data_ultra_procesado_uat where status_ingreso_venta <> 10 order by nro_documento
+
+select * from data_ultra_procesado_uat 
+
+-- update data_ultra_procesado_uat set representante_nro_doc = '76850739', representante_ape_materno = 'CORZO',
+-- representante_nombres = 'MANUEL', status_ingreso_venta = 5 where nro_documento = '20565536657'
+
+
+select id_data, status_ingreso_venta, status_resultado, desc_latitud, desc_longitud, -- nombres, ape_paterno, ape_materno, 
+cod_circuito, cod_pedido_ultra,
+nro_documento, * from data_ultra_procesado_uat 
+where status_resultado like 'Cliente no cumple Requisitos Comerciales%'
+and status_ingreso_venta not in (10, 1) -- and tipo_documento IN ('DNI', 'CE')
+
+
+select razon_social_intranet, ape_paterno, ape_materno, nombres, desc_latitud, desc_longitud, status_ingreso_venta,
+status_resultado, cod_circuito, cod_pedido_ultra, * from data_ultra_procesado_uat 
+where nro_documento = '20601510198' -- and cod_circuito = 226535
+
+
+update data_ultra_procesado_uat SET desc_latitud = '-12.103863354603952', desc_longitud ='-77.04815781782085' WHERE cod_pedido_ultra ='5000034' AND cod_circuito = '0';
+
+update data_ultra_procesado_uat set status_ingreso_venta = 1 where nro_documento = '20601510198'
+
+
+
+select id_data, status_ingreso_venta, status_resultado, ape_paterno, ape_materno, nombres,  flg_check_nombres,
+nro_documento, tipo_documento, * from data_ultra_procesado_uat 
+where status_resultado like 'Cliente no cumple Requisitos Comerciales%'
+and status_ingreso_venta not in (10, 1) and tipo_documento IN ('DNI', 'CE')
+
+select id_data, status_ingreso_venta, status_resultado, razon_social_intranet, ape_paterno, ape_materno, nombres, tipo_vivienda, 
+cod_circuito, cod_pedido_ultra,
+* from data_ultra_procesado_uat 
+where status_resultado = 'Error en los nombres'
+and status_ingreso_venta not in (10, 1) and nro_documento = 'UN B49521'
+
+select razon_social_intranet, ape_paterno, ape_materno, nombres, status_ingreso_venta,
+status_resultado, cod_circuito, cod_pedido_ultra, * from data_ultra_procesado_uat 
+where nro_documento = '0A9155857' and cod_circuito = 60937
+
+
+
+update data_ultra_procesado_uat SET desc_latitud = '-12.122910509312934', desc_longitud ='-76.97200439708801' WHERE cod_pedido_ultra ='0' AND cod_circuito = '60937';
+
+
+update data_ultra_procesado_uat set status_ingreso_venta = 1 where nro_documento = '20605383646' and cod_circuito = 60937;
+
+update data_ultra_procesado_uat set flg_check_nombres = 1, status_ingreso_venta = 1
+-- , nombres = 'MARK JAMES', ape_paterno = 'PEARSON'
+-- , ape_materno = ' '
+-- , nro_documento = '020211001', tipo_documento = 'CE'
+where nro_documento = '0A9155857';
+
+-- Cliente no cumple Requisitos Comerciales  Motivo	-12.1186420000	-76.9712110000	MEAD	ARNOVITZ	 	Multifamiliar	47659418
+-- Cliente no cumple Requisitos Comerciales  Motivo	-12.1143780000	-76.9789070000	CECILIA	LARIOS	FLORES	Multifamiliar	40312254
+-- Cliente no cumple Requisitos Comerciales  Motivo	-12.1030310000	-77.0473820000	KAREN DAYANA	MONTOYA	SUAREZ	Hogar	10760728
+
+select * from PE_OPTICAL_ADM_PORTAL.ECOM.ECOM_CLIENTE where CLIV_NRO_RUC = 'AG774859'
+
+
+select id_data, status_ingreso_venta, status_resultado, desc_latitud, desc_longitud, nombres, ape_paterno, ape_materno, tipo_vivienda, 
+cod_circuito, cod_pedido_ultra,
+* from data_ultra_procesado_uat 
+where status_resultado = 'Error en los nombres'
+and status_ingreso_venta not in (10, 1) and nro_documento = '08221986'
+
+
+
+update data_ultra_procesado_uat SET desc_latitud = '-12.105284174462914', desc_longitud = '-77.05308847909266' WHERE cod_pedido_ultra = '0' AND cod_circuito= '38448';
+
+
+select razon_social_intranet, nombres, ape_paterno, ape_materno, * from data_ultra_procesado_uat where nro_documento = '20518934091'
+
+update data_ultra_procesado_uat set status_ingreso_venta = 1 where nro_documento = '08221986'
+
+-- update data_ultra_procesado_uat set flg_check_nombres = 1, status_ingreso_venta = 1 where nro_documento = '000534172'
+
+
+SELECT * FROM PE_OPTICAL_ADM_PORTAL.ECOM.ECOM_CLIENTE WHERE CLIV_NRO_RUC = '007490766'
+SELECT TOP 1000 * FROM [10.1.4.22].PE_WINET_CRM.CRM.CRM_CLIENTE WHERE CLIV_NUMERO_DOCUMENTO = '007490766'
+SELECT TOP 1000 * FROM PE_OPTICAL_CRM_PORTAL.CRM.CRM_CLIENTE WHERE CLIV_NUMERO_DOCUMENTO = '007490766'
+
+update data_ultra_procesado_uat set flg_check_nombres = 1, status_ingreso_venta = 1,
+nombres = 'RENAUD PATRICE NICOLAS', ape_paterno = 'PELAT', ape_materno = ' '
+where nro_documento = '007490766';
+
+-- UPDATE data_ultra_procesado_uat SET nro_documento = '001655107', status_ingreso_venta = 1, tipo_documento = 'CE' where nro_documento = '01655107'
+
+
+
+select * from data_ultra_procesado_uat where status_resultado = 'Error en los nombres' and status_ingreso_venta = 0
+update data_ultra_procesado_uat set status_ingreso_venta = 1 where status_resultado = 'Error en los nombres' and status_ingreso_venta = 0
+
+
+select flg_validate_celular, * from data_ultra_procesado_uat  where flg_validate_celular = 0 order by id_data
+
+select flg_validate_celular, desc_correo, desc_celular, desc_celular2, * from data_ultra_procesado_uat order by id_data
+
+select flg_validate_celular, desc_correo, desc_celular, desc_celular2, * from data_ultra_procesado_uat where desc_celular = '984114723'
+
+update data_ultra_procesado_uat set flg_validate_celular = 0
+
+update data_ultra_procesado_uat set desc_celular2 = LTRIM(RTRIM(desc_celular2))
+
+update data_ultra_procesado_uat set desc_celular = '983549523' where id_data = 733;
+
+update data_ultra_procesado_uat set flg_validate_plan = 0
+select * from data_ultra_procesado_uat where cod_circuito = 57194
+
+select * from data_ultra_raw where CircuitoCod  = 57194
+
+SELECT status_ingreso_venta, status_resultado, desc_producto, * FROM data_ultra_procesado_uat order by nro_documento 
+
+
+select * from data_ultra_procesado_uat order by 1 desc
+select distinct desc_oferta from data_ultra_procesado_uat
+
 UPDATE data_ultra_procesado_uat SET status_ingreso_venta = 1, status_resultado = '' where nro_documento = '000523863' and id_data = 348;
 UPDATE data_ultra_procesado_uat SET status_ingreso_venta = 1, status_resultado = '' where status_resultado = 'No puedes continuar con el registro de venta debido a que las CTOs de la Zona se encuentran saturadas o no existen CTOs disponibles' and id_data = 348;
+
+ALTER TABLE data_ultra_procesado_uat ADD flg_check_nombres TINYINT NOT NULL DEFAULT 0;
+ALTER TABLE data_ultra_procesado_uat ADD updated_at DATETIME NOT NULL DEFAULT GETDATE();
+
+update data_ultra_procesado_uat set nombres = LTRIM(RTRIM(nombres))
+update data_ultra_procesado_uat set ape_paterno = LTRIM(RTRIM(ape_paterno))
+update data_ultra_procesado_uat set ape_materno = LTRIM(RTRIM(ape_materno))
+
 -- UAT
 
 DROP TRIGGER  dbo.trg_PreventUpdateExceptFields;

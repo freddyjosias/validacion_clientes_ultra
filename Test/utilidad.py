@@ -27,7 +27,7 @@ class Util:
                            "nombres, ape_paterno as paterno, ape_materno as materno, representante_nombres as rnombres, " + 
                            "representante_ape_paterno as rpaterno, representante_ape_materno as rmaterno, " + 
                            "nro_departamento as dpto, nro_piso as piso, tipo_predio as predio, nombre_condominio as condominio, torre_bloque as bloque, desc_oferta, " +
-                           f" desc_producto, desc_celular2 as desc_phone FROM {DATABASE_NAME_TABLE} WHERE fec_baja IS NULL AND estado_pedido = 'Activo' AND status_ingreso_venta = {estado} ORDER BY nro_documento ")
+                           f" desc_producto, desc_celular2 as desc_phone, flg_check_nombres FROM {DATABASE_NAME_TABLE} WHERE fec_baja IS NULL AND estado_pedido = 'Activo' AND status_ingreso_venta = {estado} ORDER BY nro_documento ")
             registros = cursor.fetchall()
             cursor.close()
             conn.close()
@@ -127,7 +127,7 @@ class Util:
         try:
             conn = self.conexion_db()
             cursor = conn.cursor()
-            cursor.execute(f"UPDATE {DATABASE_NAME_TABLE} SET status_ingreso_venta = " + str(estado) + ", " +
+            cursor.execute(f"UPDATE {DATABASE_NAME_TABLE} SET updated_at = GETDATE(), status_ingreso_venta = " + str(estado) + ", " +
                            "status_resultado = '" + str(text) + "' WHERE id_data = " + str(id) )
             afected_rows = cursor.rowcount
             conn.commit()

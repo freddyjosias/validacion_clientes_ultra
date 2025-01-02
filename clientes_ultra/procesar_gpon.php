@@ -29,6 +29,10 @@ function migrar_g_pon(array $data, $sqlServer)
 
     $data['Distrito'] = strtoupper($data['Distrito']) == 'CERCADO DE LIMA' ? 'LIMA' : $data['Distrito'];
 
+    if($data['IdPedido'] == 5000084) {
+        $data['RUC'] = '10702482572';
+    }
+
     $validaciones = [
         'COD_PEDIDO_ULTRA' => $data['IdPedido'] == $resultados['cod_pedido_ultra'],
         'NRO_DOCUMENTO' => $data['RUC'] == $resultados['num_documento'],
@@ -157,80 +161,23 @@ function migrar_g_pon(array $data, $sqlServer)
 
         $dataEquifax = get_data_equifax($resultados['num_documento']);
 
-        if(!isset($dataEquifax['RazonSocial']) and !isset($dataEquifax['PrimerNombre']))
+        if(strlen($resultados['num_documento']) == 11 and substr($resultados['num_documento'], 0, 2) === '20')
         {
-            print_r_f('ERROR 5');
-        }
-
-        if(!isset($dataEquifax['PrimerNombre'])) {
+            if(!isset($dataEquifax['RazonSocial']) or !is_string($dataEquifax['RazonSocial']) or strlen($dataEquifax['RazonSocial']) < 5 or isset($dataEquifax['PrimerNombre']) or isset($dataEquifax['ApellidoPaterno']) or isset($dataEquifax['ApellidoMaterno'])) {
+                print_r_f(['200', $dataEquifax['RazonSocial'], $data, $resultados, $dataEquifax]);
+            }
             $dataEquifax['PrimerNombre'] = '';
             $dataEquifax['ApellidoPaterno'] = '';
             $dataEquifax['ApellidoMaterno'] = '';
+        }
+        else if(!isset($dataEquifax['RazonSocial']) or !is_string($dataEquifax['RazonSocial']) or strlen($dataEquifax['RazonSocial']) < 5 or 
+        !isset($dataEquifax['PrimerNombre']) or !is_string($dataEquifax['PrimerNombre']) or strlen($dataEquifax['PrimerNombre']) < 5 or 
+        !isset($dataEquifax['ApellidoPaterno']) or !is_string($dataEquifax['ApellidoPaterno']) or strlen($dataEquifax['ApellidoPaterno']) < 3 or 
+        !isset($dataEquifax['ApellidoMaterno']) or !is_string($dataEquifax['ApellidoMaterno']) or strlen($dataEquifax['ApellidoMaterno']) < 4)
+        {
+            print_r_f(['300', $dataEquifax['RazonSocial'],  $dataEquifax, $data, $resultados]);
         } else {
-            $data_aux = [
-                'desc_nombres' => '',
-                'desc_apellido_paterno' => '',
-                'desc_apellido_materno' => ''
-            ];
-
-            $aux = explode(' ', $dataEquifax['RazonSocial']);
-
-            if(isset($aux[0])) {
-                $data_aux['desc_apellido_paterno'] = $aux[0];
-            }
-
-            if(isset($aux[1])) {
-                $data_aux['desc_apellido_materno'] = $aux[1];
-            }
-
-            if(isset($aux[2])) {
-                $data_aux['desc_nombres'] = $aux[2];
-            }
-
-            if(isset($aux[3])) {
-                $data_aux['desc_nombres'] .= ' ' . $aux[3];
-            }
-
-            if(isset($aux[4])) {
-                $data_aux['desc_nombres'] .= ' ' . $aux[4];
-            }
-
-            if(isset($aux[5])) {
-                $data_aux['desc_nombres'] .= ' ' . $aux[5];
-            }
-
-            if(isset($aux[6])) {
-                $data_aux['desc_nombres'] .= ' ' . $aux[6];
-            }
-
-            $isValidoAuxData = false;
-
-            if(strpos($dataEquifax['RazonSocial'], $data_aux['desc_apellido_paterno'] . ' ' . $data_aux['desc_apellido_materno']) === 0) {
-                $isValidoAuxData = true;
-            }
-
-            if(is_array($dataEquifax['PrimerNombre']) and count($dataEquifax['PrimerNombre']) == 0 and $isValidoAuxData) {
-                $dataEquifax['PrimerNombre'] = $data_aux['desc_nombres'];
-            }
-
-            if(is_array($dataEquifax['ApellidoPaterno']) and count($dataEquifax['ApellidoPaterno']) == 0 and $isValidoAuxData) {
-                $dataEquifax['ApellidoPaterno'] = $data_aux['desc_apellido_paterno'];
-            }
-
-            if(is_array($dataEquifax['ApellidoMaterno']) and count($dataEquifax['ApellidoMaterno']) == 0 and $isValidoAuxData) {
-                $dataEquifax['ApellidoMaterno'] = $data_aux['desc_apellido_materno'];
-            }
-
-
             $dataEquifax['RazonSocial'] = '';
-
-            if($dataEquifax['ApellidoMaterno'] == '') {
-                $dataEquifax['ApellidoMaterno'] = '.';
-            }
-
-            /* if(is_array($directorio['ApellidoMaterno']) and count($directorio['ApellidoMaterno']) == 0) {
-                $directorio['ApellidoMaterno'] = '.';
-            } */
         }
 
         // print_r_f($resultados);
@@ -239,7 +186,7 @@ function migrar_g_pon(array $data, $sqlServer)
             // print_r_f('ERROR 6');
 
             $sqlServer->update("UPDATE data_ultra_raw SET flg_migrado = 1, desc_observacion = ? WHERE IdPedido = ? and RUC = ?",
-            ['El estado del cliente es ' . $resultados['estado'] . ' (' . ($resultados['fec_baja'] ?? $resultados['fec_suspension']) . ')', 
+            ['El estado del cliente es ' . $resultados['estado'], 
             $resultados['cod_pedido_ultra'], $data['RUC']]);
             return;
         }
@@ -261,18 +208,81 @@ function migrar_g_pon(array $data, $sqlServer)
             return;
         }
 
-        if($resultados['desc_ultimo_periodo'] != '202411') {
+        if($resultados['desc_ultimo_periodo'] != '202412') {
             // print_r_f($resultados);
 
             $sqlServer->update("UPDATE data_ultra_raw SET flg_migrado = 1, desc_observacion = ? WHERE IdPedido = ? and RUC = ?",
-            ['El último periodo de emision con estado COBRADO es ' . $resultados['desc_ultimo_periodo'], $resultados['cod_pedido_ultra'], $data['RUC']]);
+            ['No tiene comprobante en el periodo 12/2024', $resultados['cod_pedido_ultra'], $data['RUC']]);
             return;
+        }
+
+        $periodoEmision = $sqlServer->select("SELECT desc_situacion, cod_circuito
+        FROM data_ultra_emision_202412
+        where cli_nro_doc = ? and ID_PEDIDO = ? and flg_status_habil = 1;", [$resultados['num_documento'], $resultados['cod_pedido_ultra']]);
+        
+        if(count($periodoEmision) != 1)
+        {
+            print_r_f(['401', $periodoEmision, $resultados]);
+            if(count($periodoEmision) == 0) {
+                print_r_f(['401', $periodoEmision, $resultados]);
+            }
+
+            $encontrado = false;
+            $cantidadEncontrado = 0;
+            $auxPeriodoEmision = [];
+
+            foreach($periodoEmision as $item) {
+                if($item['cod_circuito'] == $resultados['cir_codigo']) {
+                    $encontrado = true;
+                    $cantidadEncontrado++;
+                    $auxPeriodoEmision[] = $item;
+                }
+            }
+
+            if($encontrado == false or $cantidadEncontrado > 1 or count($auxPeriodoEmision) != 1) {
+                print_r_f(['402', $periodoEmision, $resultados]);
+            }
+
+            $periodoEmision = $auxPeriodoEmision;
+
+            // print_r_f(['400', $periodoEmision, $resultados]);
+            // $sqlServer->update("UPDATE data_ultra_raw SET flg_migrado = 1, desc_observacion = ? WHERE Item = ? AND ClienteID = ? AND CircuitoCod = ?",
+            // ['No tiene comprobante generado en el periodo 202412', $data['Item'], $data['ClienteID'], $data['CircuitoCod']]);
+            // return;
+        }
+
+        $periodoEmision = $periodoEmision[0];
+
+        $desc_activacion_habil = 'NO HABILITADO';
+
+        if($periodoEmision['desc_situacion'] == 'COBR') {
+            $desc_activacion_habil = 'HABILITADO';
+        }
+
+        // print_r_f([$periodoEmision, $desc_activacion_habil]);
+
+        if($resultados['desc_oferta'] == 'Ultra 600') {
+            $resultados['desc_oferta'] = 'Migración Ultra 600';
+        }
+
+        $planesValidos = ['Migración Ultra 600'];
+
+        if(!in_array($resultados['desc_oferta'], $planesValidos)) {
+            print_r_f(['El plan no es valido', $resultados, $data['Item'], $data['ClienteID'], $data['CircuitoCod']]);
+        }
+
+        $productos = ['Migración Ultra 600' => 'Migración Ultra 600 Mbps'];
+
+        $productoFinal = $productos[$resultados['desc_oferta']];
+
+        if(!is_string($productoFinal) or strlen($productoFinal) < 5) {
+            print_r_f(['El plan no es valido', $data['Item'], $data['ClienteID'], $data['CircuitoCod']]);
         }
 
         $resultadosContacto = $sqlServer->select("SET NOCOUNT ON
 
-        DECLARE @NRO_RUC VARCHAR(50) = ?
-        DECLARE @CORREO VARCHAR(30), @CELULAR1 VARCHAR(30), @CELULAR2 VARCHAR(30), @ID_CLIENTE_ECOM INT
+        DECLARE @NRO_RUC VARCHAR(100) = ?
+        DECLARE @CORREO VARCHAR(100), @CELULAR1 VARCHAR(100), @CELULAR2 VARCHAR(100), @ID_CLIENTE_ECOM INT
 
         SET @CORREO = (SELECT top 1 CTOV_EMAIL FROM data_ultra_contacto where CLIV_NRO_RUC = @NRO_RUC AND CTOV_EMAIL IS NOT NULL ORDER BY CTOD_FECHA_ALTA desc);
         SET @CELULAR1 = (SELECT top 1 CTOV_TELEFONO_CELU FROM data_ultra_contacto where CLIV_NRO_RUC = @NRO_RUC AND CTOV_TELEFONO_CELU IS NOT NULL ORDER BY CTOD_FECHA_ALTA desc);
@@ -292,6 +302,12 @@ function migrar_g_pon(array $data, $sqlServer)
         }
 
         $resultadosContacto = $resultadosContacto[0];
+
+        if($resultados['num_documento'] == '10702482572') {
+            // print_r_f([$resultadosContacto['id_cliente_ecom'], $resultados['id_cliente_ecom']]);
+            $resultadosContacto['id_cliente_ecom'] = 777489;
+            $resultados['id_cliente_ecom'] = 777489;
+        }
 
         if($resultadosContacto['id_cliente_ecom'] != $resultados['id_cliente_ecom']) {
             print_r_f('ERROR 11');
@@ -320,7 +336,7 @@ function migrar_g_pon(array $data, $sqlServer)
         }
 
         $resultadosDireccion =[
-            'tipo_domicilio' => 'HOGAR',
+            'tipo_domicilio' => 'Hogar',
             'nro_piso' => '',
             'nro_dpto' => '',
             'torre_bloque' => '',
@@ -329,7 +345,7 @@ function migrar_g_pon(array $data, $sqlServer)
         ];
 
         if($data['Edificio'] != 'No') {
-            $resultadosDireccion['tipo_domicilio'] = 'CONDOMINIO';
+            $resultadosDireccion['tipo_domicilio'] = 'Condominio/Edificio';
             $resultadosDireccion['nombre_condominio'] = $data['NombreEdificio'];
             $resultadosDireccion['torre_bloque'] = 1;
             $resultadosDireccion['nro_piso'] = 1;
@@ -349,17 +365,17 @@ function migrar_g_pon(array $data, $sqlServer)
         }
 
         
-        print_r_f([
+        /* print_r_f([
             'data_exel' => $data,
             'data_db' => $resultados, 
             'data_contacto' => $resultadosContacto, 
             'data_cliente' => $dataEquifax, 
             'data_representante' => $dataRepresentante,
             'data_direccion' => $resultadosDireccion
-        ]);
+        ]); */
         
 
-        $insertQuery = "INSERT INTO data_ultra_procesado (
+        $insertQuery = "INSERT INTO data_ultra_procesado_uat (
             nro_documento, razon_social, id_cliente_intranet, id_cliente_ultra, 
             id_cliente_ecom, cod_pedido_ultra, cod_circuito, desc_circuito,
             razon_social_intranet, fec_vence_contrato, fec_baja, ancho_banda,
@@ -368,8 +384,11 @@ function migrar_g_pon(array $data, $sqlServer)
             desc_correo, desc_celular, desc_celular2, tipo_documento,
             tipo_vivienda, nro_piso, nro_departamento, nombre_condominio, tipo_predio, torre_bloque,
             ecom_id_contrato, ecom_id_servicio, periodo_ultima_emision,
-            representante_tipo_doc, representante_nro_doc, representante_nombres, representante_ape_paterno, representante_ape_materno
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            representante_tipo_doc, representante_nro_doc, representante_nombres, representante_ape_paterno, representante_ape_materno,
+            desc_activacion_habil, desc_producto,flg_check_nombres, desc_observacion_activacion, cod_pedido_pf_ultra,
+            status_ingreso_venta
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+        ?, ?, 0, 'OK', 0, 1)";
 
         $params = [
             $resultados['num_documento'],
@@ -393,12 +412,12 @@ function migrar_g_pon(array $data, $sqlServer)
             $resultados['desc_provincia'],
             $resultados['desc_region'],
             $resultados['desc_oferta'],
-            $dataEquifax['PrimerNombre'],
-            $dataEquifax['ApellidoPaterno'],
-            $dataEquifax['ApellidoMaterno'], 
-            $resultadosContacto['desc_correo'],
-            $resultadosContacto['desc_celular'],
-            $resultadosContacto['desc_telefono'],
+            trim($dataEquifax['PrimerNombre']),
+            trim($dataEquifax['ApellidoPaterno']),
+            trim($dataEquifax['ApellidoMaterno']), 
+            trim($resultadosContacto['desc_correo']),
+            trim($resultadosContacto['desc_celular']),
+            trim($resultadosContacto['desc_telefono']),
             $resultados['desc_tipo_documento'],
             $resultadosDireccion['tipo_domicilio'],
             $resultadosDireccion['nro_piso'],
@@ -409,11 +428,13 @@ function migrar_g_pon(array $data, $sqlServer)
             $resultados['id_contrato_ecom'],
             $resultados['id_servicio_ecom'],
             $resultados['desc_ultimo_periodo'],
-            $dataRepresentante['desc_tipo_documento'],
-            $dataRepresentante['desc_numero_documento'],
-            $dataRepresentante['desc_nombres'],
-            $dataRepresentante['desc_apellido_paterno'],
-            $dataRepresentante['desc_apellido_materno']
+            trim($dataRepresentante['desc_tipo_documento']),
+            trim($dataRepresentante['desc_numero_documento']),
+            trim($dataRepresentante['desc_nombres']),
+            trim($dataRepresentante['desc_apellido_paterno']),
+            trim($dataRepresentante['desc_apellido_materno']),
+            trim($desc_activacion_habil),
+            trim($productoFinal)
         ];
 
         // print_r_f($params);
@@ -422,7 +443,7 @@ function migrar_g_pon(array $data, $sqlServer)
 
         if($result == false)
         {
-            echo "Error al insertar datos en la tabla data_ultra_procesado";
+            echo "Error al insertar datos en la tabla data_ultra_procesado_uat";
             print_r_f($result);
             return;
         }

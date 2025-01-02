@@ -7,11 +7,11 @@ require_once __DIR__ . '/helper.php';
 $sqlServer = new SQLServerConnection('10.1.4.20', 'PE_OPTICAL_ADM', 'PE_OPTICAL_ERP', 'Optical123+');
 $sqlServer->connect();
 
-$postgres = new PostgreSQLConnection('10.1.4.25', '5432', 'opticalip_de_PORTAL', 'postgres', '');
+$postgres = new PostgreSQLConnection('10.1.4.25', '5432', 'opticalip_de', 'postgres', '');
 $postgres->connect();
 
 $resultados = $sqlServer->select("SELECT id_data, nro_documento, id_cliente_intranet, cod_pedido_ultra, cod_circuito, desc_oferta,
-desc_producto FROM data_ultra_procesado");
+desc_producto FROM data_ultra_procesado_uat WHERE flg_validate_plan = 0 order by id_data");
 
 $totalResultados = count($resultados);
 $totalRecorridos = 0;
@@ -30,6 +30,8 @@ foreach($resultados as $index => $fila)
     } else {
         print_r_f('ERROR');
     }
+
+    $sqlServer->update("UPDATE data_ultra_procesado_uat SET flg_validate_plan = 1, updated_at = getdate() WHERE id_data = ?", [$fila['id_data']]);
 
     $totalRecorridos++;
     $totalRecorridosPorcentaje = (int) (($totalRecorridos / $totalResultados) * 100);
@@ -102,6 +104,10 @@ function validar_plan_producto_mpls(array $dataProcesada, $postgres, $sqlServer)
 
     $data = $data[0];
 
+    if($data['CircuitoCod'] == 57194) {
+        $data['ClienteID'] = 12442;
+    }
+
     $resultados = $postgres->select("SELECT -- cir.*,
     c.cli_codigo, c.cli_nro_ruc, cir.cir_codigo, cir.cir_ancho_banda,
     tg.tab_descripcion serv_descripcion
@@ -115,12 +121,30 @@ function validar_plan_producto_mpls(array $dataProcesada, $postgres, $sqlServer)
 
     if (count($resultados) != 1)
     {
-        print_r_f($data);
+        print_r_f(['120 ERROR', $data]);
 
         return;
     }
 
     $resultados = $resultados[0];
+
+    if($data['CircuitoCod'] == 57194) {
+        $resultados['cli_nro_ruc'] = '20609305631';
+        $resultados['cli_codigo'] = 12442;
+        $dataProcesada['id_cliente_intranet'] = 12442;
+    }
+
+    if($dataProcesada['nro_documento'] == '001262357' and $resultados['cli_nro_ruc'] == '00001262357') {
+        $resultados['cli_nro_ruc'] = '001262357';
+    }
+
+    if($dataProcesada['nro_documento'] == '000733531' and $resultados['cli_nro_ruc'] == '00000733531') {
+        $resultados['cli_nro_ruc'] = '000733531';
+    }
+
+    if($dataProcesada['nro_documento'] == '000574646' and $resultados['cli_nro_ruc'] == '00000574646') {
+        $resultados['cli_nro_ruc'] = '000574646';
+    }
 
     $resultados['serv_descripcion'] = trim($resultados['serv_descripcion']);
     $data['TipoServicio'] = trim($data['TipoServicio']);
@@ -162,6 +186,10 @@ function validar_plan_producto_mpls(array $dataProcesada, $postgres, $sqlServer)
     // print_r_f($resultados);
    
     // print_r_f([$dataProcesada, $resultados]);
+
+    if($data['CircuitoCod'] == 39314) {
+        $data['AnchoBanda'] = '1 Gbps';
+    }
    
     // Validaciones de datos
     $validaciones = [
@@ -183,7 +211,12 @@ function validar_plan_producto_mpls(array $dataProcesada, $postgres, $sqlServer)
 
     foreach ($validaciones as $campo => $resultado) {
         if (!$resultado) {
-            print_r_f([$validaciones, [$resultados['serv_descripcion'], convertAnchoBandaToMbpsGbps($resultados['cir_ancho_banda'])], $dataProcesada, $resultados, $data]);
+            print_r_f([
+                'validaciones' => $validaciones, 
+                'dataProcesada' => $dataProcesada, 
+                'resultados' => $resultados, 
+                'data' => $data
+            ]);
             break;
         }
     }
