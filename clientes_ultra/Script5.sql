@@ -175,8 +175,31 @@ group by ID_PEDIDO
 order by 2 desc
 
 SELECT * 
-FROM OPENQUERY(ULTRACRM, 'SELECT 1');
+INTO #data_uat_temp
+FROM OPENQUERY(ULTRACRM, 'SELECT P.PEDI_COD_PEDIDO, T.TIPV_NOMBRE_CORTO, C.CLIV_NUMERO_DOCUMENTO,
+C.CLIV_NOMBRES, C.CLIV_APELLIDO_PATERNO, C.CLIV_APELLIDO_MATERNO,
+P.PEDV_CORREO, P.PEDV_CELULAR, P.PEDV_TELEFONO,
+P.TIPO_DOC_REPRE, P.NUMERO_DOC_REPRE, P.NOMBRES_REPRE
+FROM CRM_PEDIDO P
+INNER JOIN CRM_CLIENTE C ON P.PEDI_COD_CLIENTE = C.CLII_COD_CLIENTE
+INNER JOIN CRM_DIRECCION D ON D.DIRI_COD_DIRECCION = P.PEDI_COD_DIRECCION
+LEFT JOIN CRM_TIPO T ON T.TIPC_CODIGO = P.PEDC_COD_TIPO_DOC AND T.TIPC_CONCEPTO = 14;');
 
+
+select e.cod_circuito, e.cod_pedido_ultra, d.*
+from #data_uat_temp d
+inner join data_ultra_procesado_uat e on d.PEDI_COD_PEDIDO = e.cod_pedido_pf_ultra
+where desc_activacion_habil = 'HABILITADO'
+
+
+SELECT d.cod_pedido_pf_ultra, CC.CLIV_RAZON_SOCIAL
+FROM data_ultra_procesado_uat d
+inner join PE_OPTICAL_ADM_PORTAL.ECOM.ECOM_CONTRATO CO ON d.ecom_id_contrato = CO.CONI_ID_CONTRATO
+INNER JOIN PE_OPTICAL_ADM_PORTAL.ECOM.ECOM_EMPRESA_CLIENTE EP ON CO.EMCI_ID_EMP_CLI = EP.EMCI_ID_EMP_CLI
+INNER JOIN PE_OPTICAL_ADM_PORTAL.ECOM.ECOM_CLIENTE CC ON EP.CLII_ID_CLIENTE = CC.CLII_ID_CLIENTE
+
+
+ALTER TABLE data_ultra_procesado_uat ADD flg_valid_nombres tinyint not null default 0
 
 
 select d.cod_pedido_pf_ultra, bk.cod_pedido_pf_ultra
@@ -186,3 +209,29 @@ where d.cod_pedido_pf_ultra <> bk.cod_pedido_pf_ultra
 and bk.cod_pedido_pf_ultra <> 0 and d.cod_pedido_pf_ultra <> 0
 
 update data_ultra_procesado_uat set cod_pedido_pf_ultra = 0;
+
+truncate table data_ultra_proc_detalle
+
+select * from data_ultra_proc_detalle
+
+select  * from PE_OPTICAL_ADM_PROD_20241224_060004.ECOM.ECOM_CONTROL_PAGO WHERE SERI_ID_SERVICIO = 91564 ORDER BY CPGV_PERIODO_CONSUMO
+
+select * from data_ultra_procesado_uat where nro_documento = '06383156'
+select * from data_ultra_raw where RUC = '6383156'
+
+-- update data_ultra_procesado_prod set nro_documento = '000320768', tipo_documento = 'CE' where nro_documento = '00320768'
+
+select * from data_ultra_procesado_uat order by cod_pedido_pf_ultra
+
+
+select IdPedido, CircuitoCod, RUC, RazonSocial, TipoServicio, Tecnologia, desc_observacion
+from data_ultra_raw
+WHERE RUC = '6383156'
+
+
+
+
+
+
+
+
