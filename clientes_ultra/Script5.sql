@@ -214,6 +214,12 @@ truncate table data_ultra_proc_detalle
 
 select * from data_ultra_proc_detalle
 
+select * from data_ultra_procesado_prod where desc_activacion_habil = 'HABILITADO' and desc_observacion_activacion <> 'El comprobante del 12/2024 no esta cobrado'
+
+select * from data_ultra_procesado_prod where cod_pedido_ultra <> 0 and desc_activacion_habil = 'HABILITADO'
+
+select top 1 * from data_ultra_procesado_prod order by nro_documento
+
 select distinct cli_nro_doc from data_ultra_emision_202412
 
 select  RUC from data_ultra_raw 
