@@ -3,12 +3,21 @@ return;
 
 select * from data_ultra_procesado_uat order by id_data
 SELECT * FROM data_ultra_procesado_prod order by id_data
-SELECT * FROM data_ultra_procesado_prod WHERE nro_documento = '000945609'
+SELECT * FROM data_ultra_procesado_prod WHERE nro_documento = '20602764380'
 SELECT * FROM data_ultra_procesado_prod WHERE status_ingreso_venta in (1) order by id_data
 SELECT top 1 * FROM data_ultra_procesado_prod WHERE status_ingreso_venta in (1) order by nro_documento
 
 
+SELECT id_data, nro_documento, status_ingreso_venta, status_resultado, * FROM data_ultra_procesado_prod p order by p.nro_documento
 
+SELECT * FROM data_ultra_procesado_prod where nro_documento = '000025316'
+SELECT * FROM data_ultra_procesado_prod where status_ingreso_venta = 10 and status_resultado = 'ok'
+-- where status_ingreso_venta = 10 and status_resultado = 'ok'
+
+SELECT id_data, nro_documento, status_ingreso_venta, status_resultado,
+* FROM data_ultra_procesado_prod where status_ingreso_venta <> 1
+
+UPDATE data_ultra_procesado_prod SET status_ingreso_venta = 1, status_resultado = '' where nro_documento = '' and id_data = 0;
 
 
 select nro_documento, count(*) from data_ultra_procesado_uat group by nro_documento order by 2 desc

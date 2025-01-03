@@ -10,19 +10,19 @@ from selenium.webdriver.common.keys import Keys
 
 from utilidad import Util
 
-BASE_URL = "http://10.1.4.81:180/login"
+BASE_URL = "https://appwinforce-win.ultra.pe/login"
 CREDENTIALS = {
     "username": "migracion.win.ultra9@ultra.pe",
     "password": "Socio@#$@%"
 }
 
-NUEVO_SEGUIMIENTO_URL = "http://10.1.4.81:180/nuevoSeguimiento"
+NUEVO_SEGUIMIENTO_URL = "https://appwinforce-win.ultra.pe/nuevoSeguimiento"
 
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 IMAGEN_PATH = os.path.join(CURRENT_DIR, "contrato_generico.pdf")
 
-FECHA_TRAMO = "05-01-2025"
+FECHA_TRAMO = "04-01-2025"
 HORA_TRAMO = "12:00"
 
 class TestVenta:
@@ -272,9 +272,13 @@ class TestVenta:
     #planes
     self.util.wait_id_clic("tipoBusqueda").find_element(By.XPATH, "//option[. = 'Internet']").click()
     
-    time.sleep(1.5)
+    time.sleep(3)
 
-    self.util.wait_id_clic("filtroOferta").find_element(By.XPATH, f"//option[. = '{self.desc_producto}']").click()
+    try:
+      self.util.wait_id_clic("filtroOferta").find_element(By.XPATH, f"//option[. = '{self.desc_producto}']").click()
+    except Exception:   
+      return 1
+
     self.util.wait_name_clic("plan")
     self.util.wait_id_clic("continuar")
 

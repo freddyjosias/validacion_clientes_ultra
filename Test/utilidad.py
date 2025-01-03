@@ -13,7 +13,7 @@ import pandas as pd
 import random
 import string
 
-DATABASE_NAME_TABLE = 'data_ultra_procesado_uat'
+DATABASE_NAME_TABLE = 'data_ultra_procesado_prod'
 
 class Util:
 
