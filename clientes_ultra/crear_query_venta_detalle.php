@@ -3,9 +3,9 @@
 require_once __DIR__ . '/../connection.php';
 require_once __DIR__ . '/../functions.php';
 
-const DB_MYSQL_WINCRM_ULTRA = 'wincrm_ultra_last';
-const TABLE_DATA_ULTRA_PROCESADO = 'data_ultra_procesado_last';
-const TABLE_DATA_ULTRA_PROC_DETALLE = 'data_ultra_proc_detalle_last';
+const DB_MYSQL_WINCRM_ULTRA = 'wincrm_ultra_uat';
+const TABLE_DATA_ULTRA_PROCESADO = 'data_ultra_procesado_uat';
+const TABLE_DATA_ULTRA_PROC_DETALLE = 'data_ultra_proc_detalle';
 
 $sqlServer = new SQLServerConnection('10.1.4.20', 'PE_OPTICAL_ADM', 'PE_OPTICAL_ERP', 'Optical123+');
 $sqlServer->connect();
@@ -80,6 +80,43 @@ foreach($resultado as $item)
                     null, null, null, null, 2);
 
                     ";
+        }
+        else if($item['desc_concepto'] === 'Incremento de Renta')
+        {
+            $queryConceptos .= "INSERT INTO CRM_PRODUCTO (PROV_NOMBRE_PRODUCTO, PROI_COD_PRODUCTO_PADRE, PAQI_PRECIO, PROI_EST_REGISTRO, PROV_USUARIO_CREACION, PROD_FECHA_CREACION,
+                        PROV_USUARIO_ACTUALIZACION, PROD_FECHA_ACTUALIZACION, PROC_COD_TIPO_LINEA_NEGOCIO, PROC_COD_TIPO_ESTADO, PROD_FECHA_INICIO,
+                        PROD_FECHA_FIN, PROI_COD_ECOM, PROV_TIPO_RENTA, PROI_VELOCIDAD, PROV_COD_PROD_ASOC, PROV_NOMBRE_ASOC, PROI_VISIBLE_OT,
+                        PROI_OBLIG, PROB_NO_MOSTRAR_EN_PEDIDO, PROI_VALIDACION_AUT, PROV_TIPO_PRODUCTO, PROI_OBLIGCATEGORIA, DESCRIPCION,
+                        TIPO_SVA, LINKIMAG, PROB_ENVIAR_CORREO, PROV_TIPO_CONFIG_PRODUCTO, PROI_FLAG_CROSS_SELLING, PROI_FLAG_ACTIVACION_NOC,
+                        PROI_FLAG_DELIVERY, PROI_FLAG_EQUIPOS_SVA, PRO_FAM_EQUIPOS, desc_prod_num_maximo, desc_prod_periodo, flg_proi_facturable,
+                        PROI_TIPO_CONCEPTO, PROI_TIPO_COMPROBANTE, PROV_CUENTA_CONTABLE_MRC, PROV_CUENTA_CONTABLE_NRC, PROI_TIPO_PRODUCTO_GRUPO)
+            VALUES ( 'Incremento de Renta', null, 0.0, 1,
+                    'migracion', NOW(), 'migracion',
+                    NOW(), null, null, null,
+                    null, NULL, '00', 0, null,
+                    null, 0, null, null, 0,
+                    '07', null, null, null, null, 0,
+                    '11', null, null, null,
+                    null, null, null, null, null,
+                    null, null, null, null, 2);
+
+                    ";
+        }
+        else if($item['desc_concepto'] === 'Migracion a Ultra 600')
+        {
+            $queryConceptos .= "INSERT INTO CRM_PRODUCTO (PROV_NOMBRE_PRODUCTO, PROI_COD_PRODUCTO_PADRE, PAQI_PRECIO, PROI_EST_REGISTRO, PROV_USUARIO_CREACION, PROD_FECHA_CREACION, PROV_USUARIO_ACTUALIZACION, PROD_FECHA_ACTUALIZACION, PROC_COD_TIPO_LINEA_NEGOCIO, PROC_COD_TIPO_ESTADO, PROD_FECHA_INICIO, PROD_FECHA_FIN, PROI_COD_ECOM, PROV_TIPO_RENTA, PROI_VELOCIDAD, PROV_COD_PROD_ASOC, PROV_NOMBRE_ASOC, PROI_VISIBLE_OT, PROI_OBLIG, PROB_NO_MOSTRAR_EN_PEDIDO, PROI_VALIDACION_AUT, PROV_TIPO_PRODUCTO, PROI_OBLIGCATEGORIA, DESCRIPCION, TIPO_SVA, LINKIMAG, PROB_ENVIAR_CORREO, PROV_TIPO_CONFIG_PRODUCTO, PROI_FLAG_CROSS_SELLING, PROI_FLAG_ACTIVACION_NOC, PROI_FLAG_DELIVERY, PROI_FLAG_EQUIPOS_SVA, PRO_FAM_EQUIPOS, desc_prod_num_maximo, desc_prod_periodo, flg_proi_facturable, PROI_TIPO_CONCEPTO, PROI_TIPO_COMPROBANTE, PROV_CUENTA_CONTABLE_MRC, PROV_CUENTA_CONTABLE_NRC, PROI_TIPO_PRODUCTO_GRUPO) VALUES ('Migracion a Ultra 600', 5, 0.000000, 1, 'pabucci', '2024-12-18 16:28:30', 'pabucci', '2024-12-18 16:28:30', null, null, null, null, 5826, '01', 600, null, null, 0, 0, 0, 0, null, 3, null, null, null, 1, '01', 1, 1, 0, null, null, null, null, 1, null, null, null, null, 3);
+
+                    ";
+
+
+        }
+        else if($item['desc_concepto'] === 'Migracion a Ultra 800')
+        {
+            $queryConceptos .= "INSERT INTO CRM_PRODUCTO (PROV_NOMBRE_PRODUCTO, PROI_COD_PRODUCTO_PADRE, PAQI_PRECIO, PROI_EST_REGISTRO, PROV_USUARIO_CREACION, PROD_FECHA_CREACION, PROV_USUARIO_ACTUALIZACION, PROD_FECHA_ACTUALIZACION, PROC_COD_TIPO_LINEA_NEGOCIO, PROC_COD_TIPO_ESTADO, PROD_FECHA_INICIO, PROD_FECHA_FIN, PROI_COD_ECOM, PROV_TIPO_RENTA, PROI_VELOCIDAD, PROV_COD_PROD_ASOC, PROV_NOMBRE_ASOC, PROI_VISIBLE_OT, PROI_OBLIG, PROB_NO_MOSTRAR_EN_PEDIDO, PROI_VALIDACION_AUT, PROV_TIPO_PRODUCTO, PROI_OBLIGCATEGORIA, DESCRIPCION, TIPO_SVA, LINKIMAG, PROB_ENVIAR_CORREO, PROV_TIPO_CONFIG_PRODUCTO, PROI_FLAG_CROSS_SELLING, PROI_FLAG_ACTIVACION_NOC, PROI_FLAG_DELIVERY, PROI_FLAG_EQUIPOS_SVA, PRO_FAM_EQUIPOS, desc_prod_num_maximo, desc_prod_periodo, flg_proi_facturable, PROI_TIPO_CONCEPTO, PROI_TIPO_COMPROBANTE, PROV_CUENTA_CONTABLE_MRC, PROV_CUENTA_CONTABLE_NRC, PROI_TIPO_PRODUCTO_GRUPO) VALUES ('Migracion a Ultra 800', 5, 0.000000, 1, 'pabucci', '2024-12-18 16:28:30', 'pabucci', '2024-12-18 16:28:30', null, null, null, null, 5826, '01', 600, null, null, 0, 0, 0, 0, null, 3, null, null, null, 1, '01', 1, 1, 0, null, null, null, null, 1, null, null, null, null, 3);
+
+                    ";
+
+
         }
         else
         {

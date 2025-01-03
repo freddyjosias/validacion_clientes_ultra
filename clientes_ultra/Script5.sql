@@ -214,6 +214,36 @@ truncate table data_ultra_proc_detalle
 
 select * from data_ultra_proc_detalle
 
+select distinct cli_nro_doc from data_ultra_emision_202412
+
+select  RUC from data_ultra_raw 
+
+
+select * from data_ultra_emision_202412 where cli_nro_doc = '20522093743'
+select * from data_ultra_emision_202412 where cod_circuito = 0 and ID_PEDIDO <> 0 and flg_status_habil = 0
+
+
+select d.* 
+from data_ultra_emision_202412 d
+left join data_ultra_raw p on d.ID_PEDIDO = p.IdPedido
+where d.ID_PEDIDO <> 0 and p.IdPedido is null
+
+select *
+from data_ultra_emision_202412 d
+left join data_ultra_procesado_prod p on d.cli_nro_doc = p.nro_documento
+where p.nro_documento is null
+
+
+select * from data_ultra_emision_202412 
+
+select * from data_ultra_procesado_prod where nro_documento = '004030393'
+select * from data_ultra_raw where RUC = 'F60717293'
+select * from data_ultra_raw WHERE IdPedido in ('500006', '5000051')
+
+
+select * from ECOM.ECOM_TABLA_GENERAL
+
+
 select  * from PE_OPTICAL_ADM_PROD_20241224_060004.ECOM.ECOM_CONTROL_PAGO WHERE SERI_ID_SERVICIO = 91564 ORDER BY CPGV_PERIODO_CONSUMO
 
 select * from data_ultra_procesado_uat where nro_documento = '06383156'
