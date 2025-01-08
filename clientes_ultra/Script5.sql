@@ -293,19 +293,6 @@ inner join data_ultra_procesado_prod d on p.cod_circuito = d.cod_circuito and p.
 where p.desc_concepto = 'Servicio de Internet Ultra';
 
 
-	select *
-	into #data_proe
-	from (
-		select d.nro_documento, p.cod_moneda, d.cod_circuito, d.cod_pedido_ultra, d.cod_pedido_pf_ultra, SUM(p.monto) total, count(*) cant
-		from data_ultra_proc_detalle_pr p
-		inner join data_ultra_procesado_prod d on p.cod_circuito = d.cod_circuito and p.cod_pedido_ultra = d.cod_pedido_ultra
-		group by d.nro_documento, p.cod_moneda, d.cod_circuito, d.cod_pedido_ultra, d.cod_pedido_pf_ultra
-	) a
-
-select *
-from #data_proe a
-inner join #tab_compro T ON a.cod_pedido_pf_ultra = T.cod_pedido
-where total <> moneda
 
 select * from data_ultra_emision
 
@@ -313,6 +300,23 @@ select * from data_ultra_emision
 SELECT * 
 into #tab_compro
 FROM OPENQUERY([ULTRACRM], 'SELECT COMC_PEDI_COD_PEDIDO cod_pedido, CASE WHEN COMI_ID_MONEDA = 1 THEN COMC_IMPORTE_TOTAL_SOLES ELSE COMC_IMPORTE_TOTAL_USD END moneda FROM db_wincrm_prod.CRM_COMPROBANTE_FACT;');
+
+select *
+into #data_proe
+from (
+	select d.nro_documento, p.cod_moneda, d.cod_circuito, d.cod_pedido_ultra, d.cod_pedido_pf_ultra, SUM(p.monto) total, count(*) cant
+	from data_ultra_proc_detalle_pr p
+	inner join data_ultra_procesado_prod d on p.cod_circuito = d.cod_circuito and p.cod_pedido_ultra = d.cod_pedido_ultra
+	group by d.nro_documento, p.cod_moneda, d.cod_circuito, d.cod_pedido_ultra, d.cod_pedido_pf_ultra
+) a
+
+
+select *
+from #data_proe a
+inner join #tab_compro T ON a.cod_pedido_pf_ultra = T.cod_pedido
+where total <> moneda
+
+
 select *
 from data_ultra_proc_detalle_pr
 where cod_circuito in ( '79710', '36957', '49101', '37720', '37671', '44205', '189261', '82327', '54231', '37893')
