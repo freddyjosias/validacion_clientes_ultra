@@ -3,9 +3,9 @@
 require_once __DIR__ . '/../connection.php';
 require_once __DIR__ . '/../functions.php';
 
-const DB_MYSQL_WINCRM_ULTRA = 'wincrm_ultra_uat';
-const DB_MYSQL_WINFORCE_ULTRA = 'winforce_ultra_uat';
-const TABLE_DATA_ULTRA_PROCESADO = 'data_ultra_procesado_uat';
+const DB_MYSQL_WINCRM_ULTRA = 'db_wincrm_prod';
+const DB_MYSQL_WINFORCE_ULTRA = 'winforce_db_prod';
+const TABLE_DATA_ULTRA_PROCESADO = 'data_ultra_procesado_prod';
 
 $sqlServer = new SQLServerConnection('10.1.4.20', 'PE_OPTICAL_ADM', 'PE_OPTICAL_ERP', 'Optical123+');
 $sqlServer->connect();
@@ -20,7 +20,7 @@ $resultados = $sqlServer->select("SELECT id_data, nro_documento, cod_pedido_ultr
 desc_distrito, desc_provincia, desc_region, desc_oferta, nro_piso FROM " . TABLE_DATA_ULTRA_PROCESADO . " 
 where cod_pedido_pf_ultra = 0 and status_ingreso_venta = 10 and status_resultado = 'ok'");
 
-// print_r_f($resultados);
+// print_r_f(count($resultados));
 $cantidadNoEncontrados = 0;
 $total = count($resultados);
 
@@ -46,7 +46,7 @@ foreach($resultados as $index => $fila)
 
     $resultadosIgualdad = [];
 
-    $pedidosWinforce = $mysql2->select("SELECT * 
+    $pedidosWinforce = $mysql2->select("SELECT *
     FROM tp_ventas v
     INNER JOIN tp_busquedas b ON v.ide_bus = b.ide_bus
     where v.ide_pedido is not null 
@@ -57,6 +57,14 @@ foreach($resultados as $index => $fila)
         $pedidosWinforce[$indice]['ven_lat'] = rtrim($pedido['ven_lat'], '0');
         $pedidosWinforce[$indice]['ven_lng'] = rtrim($pedido['ven_lng'], '0');
         $pedidosWinforce[$indice]['piso'] = $pedido['piso'] == ',' ? '' : $pedido['piso'];
+
+        if($pedidosWinforce[$indice]['ide_ven'] == 2) {
+            $pedidosWinforce[$indice]['piso'] = '8';
+        }
+
+        if($pedidosWinforce[$indice]['ide_ven'] == 727) {
+            // $pedidosWinforce[$indice]['ven_ubigeo'] = 'LIMA LIMA MIRAFLORES';
+        }
     }
 
     foreach($pedidosWinforce as $indice => $pedido)
@@ -65,6 +73,7 @@ foreach($resultados as $index => $fila)
 
         if(in_array($fila['nro_documento'], $exoneradosUbigeo))
         {
+            print_r_f(['exonerado', $fila, $pedido]);
             if($pedido['cli_num_doc'] === $fila['nro_documento'] and $pedido['nom_oferta'] === $fila['desc_oferta'] and 
             $pedido['ven_lat'] === $fila['desc_latitud'] and $pedido['ven_lng'] === $fila['desc_longitud'])
             {
@@ -96,10 +105,88 @@ foreach($resultados as $index => $fila)
             'ubigeo_pedido' => $pedido['ven_ubigeo'],
             'ubigeo_fila' => $ubigeo,
             'nro_piso' => $fila['nro_piso'] === $pedido['piso'],
+            'piso_pedido' => $pedido['piso'],
+            'piso_fila' => $fila['nro_piso'],
         ];
     }
 
-    // print_r_f([$resultadosIgualdad, $fila]);
+    // print_r_f([$cantPedidosEncontrados, $pedidoEntontrado, $resultadosIgualdad]);
+
+    if($cantPedidosEncontrados === 0 and !$pedidoEntontrado)
+    {
+        $ubigeo = $fila['desc_region'] . ' ' . $fila['desc_provincia'] . ' ' . $fila['desc_distrito'];
+        $auxUbigeo = $fila['desc_region'] . ' ' . $fila['desc_provincia'] . ' ' . $fila['desc_distrito'];
+
+        $curl = curl_init();
+
+        curl_setopt_array($curl, array(
+          CURLOPT_URL => 'https://wincoreh.win.pe/php/',
+          CURLOPT_RETURNTRANSFER => true,
+          CURLOPT_ENCODING => '',
+          CURLOPT_MAXREDIRS => 10,
+          CURLOPT_TIMEOUT => 0,
+          CURLOPT_FOLLOWLOCATION => true,
+          CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+          CURLOPT_CUSTOMREQUEST => 'POST',
+          CURLOPT_POSTFIELDS =>'{
+            "params": {
+                "latitud": "' . $fila['desc_latitud'] . '",
+                "longitud": "' . $fila['desc_longitud'] . '",
+                "ticked": "7f0d6d36c95496760e46ba6a03a9f901.ae131e6e5318f79977536d13629ac9ee.0a26dbc0b480871cb375fd44d3d0fa84"
+            },
+            "method": "logapi.getUbicacion"
+        }',
+          CURLOPT_HTTPHEADER => array(
+            'Content-Type: application/json'
+          ),
+        ));
+
+        $response = curl_exec($curl);
+
+        curl_close($curl);
+
+        $response = json_decode($response, true);
+
+        if(!isset($response['data'][0]['nombre_distrito']) or !isset($response['data'][0]['nombre_provincia']) or !isset($response['data'][0]['nombre_region']))
+        {
+            print_r_f(['no encontrado 1', $response]);
+            $cantidadNoEncontrados++;
+            continue;
+        }
+
+        $ubigeo = mb_strtoupper(trim($response['data'][0]['nombre_region'])) . ' ' . mb_strtoupper(trim($response['data'][0]['nombre_provincia'])) . ' ' . mb_strtoupper(trim($response['data'][0]['nombre_distrito']));
+
+        $ubigeo = quitarTildes($ubigeo);
+        $resultadosIgualdad = [];
+
+        foreach($pedidosWinforce as $indice => $pedido)
+        {
+            if($pedido['cli_num_doc'] === $fila['nro_documento'] and $pedido['nom_oferta'] === $fila['desc_oferta'] and 
+            $pedido['ven_lat'] === $fila['desc_latitud'] and $pedido['ven_lng'] === $fila['desc_longitud'] and 
+            ($pedido['ven_ubigeo'] === $ubigeo or (count($pedidosWinforce) === 1 and $auxUbigeo === $ubigeo)) 
+            and $pedido['piso'] === $fila['nro_piso'])
+            {
+                $pedidoEntontrado = true;
+                $dataPedido = $pedido;
+                $cantPedidosEncontrados++;
+            }
+
+            $resultadosIgualdad[] = [
+                'nro_documento' => $fila['nro_documento'] === $pedido['cli_num_doc'],
+                'desc_oferta' => $fila['desc_oferta'] === $pedido['nom_oferta'],
+                'desc_latitud' => $fila['desc_latitud'] === $pedido['ven_lat'],
+                'desc_longitud' => $fila['desc_longitud'] === $pedido['ven_lng'],
+                'desc_ubigeo' => $pedido['ven_ubigeo'] === $ubigeo,
+                'ubigeo_pedido' => $pedido['ven_ubigeo'],
+                'ubigeo_fila' => $ubigeo,
+                'nro_piso' => $fila['nro_piso'] === $pedido['piso'],
+                'piso_pedido' => $pedido['piso'],
+                'piso_fila' => $fila['nro_piso'],
+            ];
+        }
+    }
+
+    // print_r_f([ $resultadosIgualdad, $fila, $pedidosWinforce]);
 
     if($cantPedidosEncontrados === 1 and $pedidoEntontrado)
     {
@@ -143,13 +230,16 @@ foreach($resultados as $index => $fila)
         // print_r_f(['no encontrado 4', $fila, $dataPedido]);
         continue;
     }
+    else {
+        print_r_f(['no encontrado 5', $cantPedidosEncontrados, $fila, $dataPedido, $pedidosWinforce]);
+    }
 
-    /* $cantidadNoEncontrados++;
+    $cantidadNoEncontrados++;
     continue;
 
     print_r_f([$fila, $pedidoEntontrado, $resultadosIgualdad, $pedidosWinforce]);
 
-    print_r_f(['start', $fila]);*/
+    print_r_f(['start', $fila]);
 
     $pedidosUltra = $mysql->select("SELECT P.PEDI_COD_PEDIDO, C.CLIV_NUMERO_DOCUMENTO, D.DIRN_LATITUD, D.DIRN_LONGITUD, 
     UPPER(U1.UBIV_DESCRIPCION) desc_distrito, UPPER(U2.UBIV_DESCRIPCION) desc_provincia, O.OFTV_NOMBRE
@@ -301,6 +391,13 @@ foreach($resultados as $index => $fila)
     }
 
     print_r_f(['encontrado', $pedidosUltra, $fila]);
+}
+
+function quitarTildes($cadena)
+{
+    $cadena = str_replace(['á', 'é', 'í', 'ó', 'ú'], ['a', 'e', 'i', 'o', 'u'], $cadena);
+    $cadena = str_replace(['Á', 'É', 'Í', 'Ó', 'Ú'], ['A', 'E', 'I', 'O', 'U'], $cadena);
+    return $cadena;
 }
 
 print_r_f('Cantidad de no encontrados: ' . $cantidadNoEncontrados . ' de ' . $total);

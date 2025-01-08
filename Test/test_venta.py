@@ -22,7 +22,7 @@ CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 IMAGEN_PATH = os.path.join(CURRENT_DIR, "contrato_generico.pdf")
 
-FECHA_TRAMO = "04-01-2025"
+FECHA_TRAMO = "06-01-2025"
 HORA_TRAMO = "12:00"
 
 class TestVenta:

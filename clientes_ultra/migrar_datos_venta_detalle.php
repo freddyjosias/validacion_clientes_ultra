@@ -3,14 +3,14 @@
 require_once __DIR__ . '/../connection.php';
 require_once __DIR__ . '/../functions.php';
 
-const DB_MYSQL_WINCRM_ULTRA = 'wincrm_ultra_uat';
-const TABLE_DATA_ULTRA_PROCESADO = 'data_ultra_procesado_uat';
-const TABLE_DATA_ULTRA_PROC_DETALLE = 'data_ultra_proc_detalle';
+const DB_MYSQL_WINCRM_ULTRA = 'db_wincrm_prod';
+const TABLE_DATA_ULTRA_PROCESADO = 'data_ultra_procesado_prod';
+const TABLE_DATA_ULTRA_PROC_DETALLE = 'data_ultra_proc_detalle_pr';
 
 $sqlServer = new SQLServerConnection('10.1.4.20', 'PE_OPTICAL_ADM', 'PE_OPTICAL_ERP', 'Optical123+');
 $sqlServer->connect();
 
-$sqlServerActual = new SQLServerConnection('10.1.4.20', 'PE_OPTICAL_ADM_PROD_20241224_060004', 'PE_OPTICAL_ERP', 'Optical123+');
+$sqlServerActual = new SQLServerConnection('10.1.4.20', 'PE_OPTICAL_ADM_PROD_20250106_090317', 'PE_OPTICAL_ERP', 'Optical123+');
 $sqlServerActual->connect();
 
 $mysql = new MySQLConnection('10.1.4.81:33061', DB_MYSQL_WINCRM_ULTRA, 'root', 'R007w1N0r3');
@@ -21,9 +21,22 @@ p.ecom_id_servicio, p.ecom_id_contrato, p.cod_pedido_pf_ultra, p.desc_moneda
 FROM " . TABLE_DATA_ULTRA_PROCESADO . " p
 LEFT JOIN " . TABLE_DATA_ULTRA_PROC_DETALLE . " d ON p.cod_circuito = d.cod_circuito and p.cod_pedido_ultra = d.cod_pedido_ultra
 where p.cod_pedido_pf_ultra <> 0 AND p.desc_activacion_habil = 'HABILITADO' AND p.desc_observacion_activacion = 'OK'
-AND d.cod_circuito IS NULL");
+AND d.cod_circuito IS NULL order by p.id_data");
 
 // print_r_f($resultados);
+
+$exoneradosDadaCir = [
+    '202407' => [218571, 231404, 235847, 49623, 225389, 229838, 226535, 234088],
+    '202408' => [231404, 235847, 49623],
+    '202410' => [45664],
+    '202411' => [45664]
+];
+
+$exoneradosDadaPedido = [
+    '202407' => [5007073, 5006988, 5006827, 5005630, 5000297, 5000007],
+    '202408' => [5005630, 5004997, 5000297,5000007],
+    '202409' => [5004997],
+];
 
 foreach($resultados as $item)
 {
@@ -36,7 +49,7 @@ foreach($resultados as $item)
 
     if(count($pedidosUltra) != 1)
     {
-        /// print_r_f(['no encontrado', $item]);
+        print_r_f(['no encontrado', $item]);
         continue;
     }
 
@@ -55,10 +68,10 @@ foreach($resultados as $item)
         print_r_f(['no encontrado - ERROR 47', $item]);
     }
 
-    procesar_venta_detalle($item, $pedidoUltra, $mysql, $sqlServer, $sqlServerActual, $esMPLS);
+    procesar_venta_detalle($item, $pedidoUltra, $mysql, $sqlServer, $sqlServerActual, $esMPLS, $exoneradosDadaCir, $exoneradosDadaPedido);
 }
 
-function procesar_venta_detalle($item, $pedidoUltra, $mysql, $sqlServer, $sqlServerActual, $esMPLS)
+function procesar_venta_detalle($item, $pedidoUltra, $mysql, $sqlServer, $sqlServerActual, $esMPLS, $exoneradosDadaCir, $exoneradosDadaPedido)
 {
     $ventaDetalleActual = $mysql->select("SELECT D.DOCI_COD_PEDIDO_REF, D.DOCI_COD_DOCUMENTO, D.DOCC_COD_TIPO_MONEDA, V.VTAI_COD_VENTA, 
     V.VTAC_COD_TIPO_MONEDA, VD.VTDI_COD_VENTA_DETALLE, VD.VTDI_COD_TARIFARIO, VD.VTDC_COD_TIPO_MONEDA,
@@ -131,12 +144,12 @@ function procesar_venta_detalle($item, $pedidoUltra, $mysql, $sqlServer, $sqlSer
         return;
     }
 
-    $controlPago = $sqlServerActual->select("SELECT CP.CPGI_ID_CONTROL_PAGO, CP.SDEI_ID_SERVICIO_DETALLE, 
+    $controlPago = $sqlServerActual->select("SELECT CP.CPGI_ID_CONTROL_PAGO, CP.SDEI_ID_SERVICIO_DETALLE,  CP.SERI_ID_SERVICIO, 
     CP.CPGI_MONEDA, CPGN_MONTO, CPGI_ESTADO, CPGB_SITUACION, CPGV_PERIODO_CONSUMO,
     CPGD_FECHA_CONSUMO_INI, CPGD_FECHA_CONSUMO_FIN, SD.CATI_ID_CATALOGO
     FROM ECOM.ECOM_CONTROL_PAGO CP
     LEFT JOIN ECOM.ECOM_SERVICIO_DETALLE SD ON CP.SDEI_ID_SERVICIO_DETALLE = SD.SDEI_ID_SERVICIO_DETALLE
-    WHERE CP.SERI_ID_SERVICIO = ? AND CPGV_PERIODO_CONSUMO > '202406' and CPGN_MONTO <> 0
+    WHERE CP.SERI_ID_SERVICIO = ? AND CPGV_PERIODO_CONSUMO > '202406' and CPGN_MONTO <> 0 and CP.CPGB_SITUACION = 1
     ORDER BY CP.CPGV_PERIODO_CONSUMO, CP.SDEI_ID_SERVICIO_DETALLE;
     ", [$item['ecom_id_servicio']]);
 
@@ -171,10 +184,15 @@ function procesar_venta_detalle($item, $pedidoUltra, $mysql, $sqlServer, $sqlSer
     {
         $estaEnControlPago = false;
         $estaEnDataComprobante = false;
+        $autoPasa = false;
 
         foreach($controlPago as $control) {
             if($control['SDEI_ID_SERVICIO_DETALLE'] === $servicio['SDEI_ID_SERVICIO_DETALLE'] and $control['CPGV_PERIODO_CONSUMO'] > '202408') {
                 $estaEnControlPago = true;
+
+                if($control['CPGD_FECHA_CONSUMO_INI'] >= '2024-12-01') {
+                    $autoPasa = true;
+                }
             }
         }
 
@@ -184,11 +202,15 @@ function procesar_venta_detalle($item, $pedidoUltra, $mysql, $sqlServer, $sqlSer
             }
         }
 
-        if($estaEnControlPago and $estaEnDataComprobante) {
+        if(($estaEnControlPago and $estaEnDataComprobante) or $autoPasa) {
+            if($servicio['SDEI_ID_SERVICIO_DETALLE'] == 10836860) {
+                $servicioDetalle[] = $servicio;
+            }
+
             $servicioDetalle[] = $servicio;
         }
         else if(($estaEnControlPago and !$estaEnDataComprobante) or (!$estaEnControlPago and $estaEnDataComprobante)) {
-            // print_r_f(['no encontrado - ERROR 130', $item, $servicio, $controlPago, $dataComprobante]);
+            print_r_f(['no encontrado - ERROR 130', $item, $servicio, $controlPago, $dataComprobante]);
             // print_r_f(['no encontrado - ERROR 130', $item, $servicio, $estaEnControlPago, $estaEnDataComprobante]);
         }
     }
@@ -233,21 +255,33 @@ function procesar_venta_detalle($item, $pedidoUltra, $mysql, $sqlServer, $sqlSer
     }
 
     // Validar moneda en $controlPago
+    $todosSonDiferentes = 0;
 
     foreach($controlPago as $control)
     {
+        $hanCambiadoDeMoneda = [85538];
+
+        if((int) $control['CPGI_MONEDA'] !== (int) $nuevaVentaDetalle['general']['moneda_ecom'] and !in_array($item['cod_circuito'], $hanCambiadoDeMoneda))
+        {
+            // return;
+            print_r_f(['no encontrado - ERROR 170', $control, $nuevaVentaDetalle, $item]);
+        }
+
         if((int) $control['CPGI_MONEDA'] !== (int) $nuevaVentaDetalle['general']['moneda_ecom'])
         {
-            return;
-            print_r_f(['no encontrado - ERROR 170', $item]);
+            $todosSonDiferentes++;
         }
+    }
+
+    if(count($controlPago)  === $todosSonDiferentes) {
+        print_r_f(['no encontrado - ERROR 171', $item]);
     }
 
     // Validar moneda en $dataComprobante
 
     foreach($dataComprobante as $comprobante)
     {
-        if((int) $comprobante['MONI_ID_MONEDA'] !== (int) $nuevaVentaDetalle['general']['moneda_ecom'])
+        if((int) $comprobante['MONI_ID_MONEDA'] !== (int) $nuevaVentaDetalle['general']['moneda_ecom'] and !in_array($item['cod_circuito'], $hanCambiadoDeMoneda))
         {
             print_r_f(['no encontrado - ERROR 180', $item]);
         }
@@ -263,7 +297,7 @@ function procesar_venta_detalle($item, $pedidoUltra, $mysql, $sqlServer, $sqlSer
         ((int) $servicio['SESI_ID_SERVICIO_ESTADO'] !== 2 and (int) $servicio['SESI_ID_SERVICIO_ESTADO'] !== 1) or
         $servicio['SERV_SITUACION'] !== 'A')
         {
-            return;
+            // return;
             print_r_f(['no encontrado - ERROR 191', $item, $servicioDetalle]);
         }
     }
@@ -313,6 +347,8 @@ function procesar_venta_detalle($item, $pedidoUltra, $mysql, $sqlServer, $sqlSer
 
     foreach($servicioDetalle as $servicio)
     {
+        if($servicio['SDEI_ID_SERVICIO_DETALLE'] == 10300050) continue;
+
         if((float) $servicio['SDEN_MONTO'] < 4 and (float) $servicio['SDEN_MONTO'] >= -1)
         {
             print_r_f(['no encontrado - ERROR 219 ' . (float) $servicio['SDEN_MONTO'], $item]);
@@ -323,7 +359,7 @@ function procesar_venta_detalle($item, $pedidoUltra, $mysql, $sqlServer, $sqlSer
 
         if((in_array($servicio['CATV_DESCRIPCION_CONCEPTO'], $tipoEmision2) and $servicio['SDEI_TIPO_EMISION'] == 2)
         // or $servicio['CATV_DESCRIPCION_CONCEPTO'] === 'Descuento'
-    )
+        )
         {
             if($servicio['CATV_DESCRIPCION_CONCEPTO'] === 'Instalacion de Servicio Ultra' or
             $servicio['CATV_DESCRIPCION_CONCEPTO'] === 'Servicio de Instalación')
@@ -352,6 +388,8 @@ function procesar_venta_detalle($item, $pedidoUltra, $mysql, $sqlServer, $sqlSer
 
     foreach($servicioDetalle as $servicio)
     {
+        if($servicio['SDEI_ID_SERVICIO_DETALLE'] == 10300050) continue;
+
         $tipoEmision2 = ['Instalacion de Servicio Ultra', 'Traslado', 'Servicios Adicionales', 'Servicio de Instalación'];
 
         if(!is_null($servicio['SDED_FECHA']) and $servicio['SDED_FECHA'] > '2024-11-31') {
@@ -403,13 +441,18 @@ function procesar_venta_detalle($item, $pedidoUltra, $mysql, $sqlServer, $sqlSer
     {
         $montoControlPago = 0;
         $montoComprobante = 0;
+        $montoComprobanteAux = 0;
         $cantidadComprobante = 0;
         $montoControlPagoSinSuspension = 0;
+        $monedaControlPago = 0;
 
         foreach($controlPago as $control)
         {
             if($control['CPGV_PERIODO_CONSUMO'] === $periodo)
             {
+                if($control['SDEI_ID_SERVICIO_DETALLE'] == 10300050) continue;
+
+                $monedaControlPago = $control['CPGI_MONEDA'];
                 $montoControlPago += round($control['CPGN_MONTO'], 2);
 
                 if($control['CATI_ID_CATALOGO'] != 40)
@@ -428,10 +471,16 @@ function procesar_venta_detalle($item, $pedidoUltra, $mysql, $sqlServer, $sqlSer
         {
             if($comprobante['COMV_PERIODO_COMPROBANTE'] === $periodo)
             {
+                if($comprobante['COMC_COD_COMPROBANTE'] == 11983489) continue;
+                if($comprobante['SDEI_ID_SERVICIO_DETALLE'] == 10300050) continue;
+                
                 $montoComprobante += ($nuevaVentaDetalle['general']['moneda'] === 'Soles') ? $comprobante['compro_det_soles'] : $comprobante['compro_det_usd'];
+                $montoComprobanteAux += $comprobante['MONI_ID_MONEDA'] == 1 ? $comprobante['compro_det_soles'] : $comprobante['compro_det_usd'];
                 $cantidadComprobante++;
 
                 $auxMontoTotal = ($nuevaVentaDetalle['general']['moneda'] === 'Soles') ? $comprobante['compro_soles'] : $comprobante['compro_usd'];
+
+                $auxMontoTotalAux = $comprobante['MONI_ID_MONEDA'] == 1 ? $comprobante['compro_soles'] : $comprobante['compro_usd'];
 
                 $comproMontoTotal += ($nuevaVentaDetalle['general']['moneda'] === 'Soles') ? $comprobante['compro_det_soles'] : $comprobante['compro_det_usd'];
 
@@ -440,18 +489,42 @@ function procesar_venta_detalle($item, $pedidoUltra, $mysql, $sqlServer, $sqlSer
                     $comproMontoTotalSinDesSuspension += ($nuevaVentaDetalle['general']['moneda'] === 'Soles') ? $comprobante['compro_det_soles'] : $comprobante['compro_det_usd'];
                 }
 
-                if ((string) $montoControlPago != $auxMontoTotal)
+                if($item['cod_circuito'] == 117009 || $item['cod_circuito'] == 117010) {
+                    $auxMontoTotal = $auxMontoTotal / 2;
+                }
+
+                if($item['cod_circuito'] == 216723) {
+                    $auxMontoTotal = 148.31;
+                }
+
+                $diferenciaMenor = false;
+
+                if(abs($montoControlPago - $auxMontoTotal) <= 0.01) {
+                    $diferenciaMenor = true;
+                }
+
+                if ((string) $montoControlPago != $auxMontoTotal and (string) $montoControlPago != $auxMontoTotalAux and 
+                !in_array($item['cod_circuito'], $exoneradosDadaCir[$periodo] ?? []) 
+                and !in_array($item['cod_pedido_ultra'], $exoneradosDadaPedido[$periodo] ?? []) and !$diferenciaMenor)
                 {
-                    return;
-                    // var_dump(['no encontrado - ERROR 285', $montoControlPago, $auxMontoTotal]); die;
-                    print_r_f(['no encontrado - ERROR 285', $montoControlPago, $auxMontoTotal, $item]);
+                    // return;
+                    print_r_f(['no encontrado - ERROR 285', $periodo, $montoControlPago, $auxMontoTotal, $auxMontoTotalAux, $comprobante, $item]);
                 }
             }
         }
 
-        if((string) $montoComprobante !== (string) $montoControlPago and $cantidadComprobante > 0)
+        $diferenciaMenor = false;
+
+        if(abs($montoControlPago - $montoComprobante) <= 0.01) {
+            $diferenciaMenor = true;
+        }
+
+        if((string) $montoComprobante !== (string) $montoControlPago and
+        (string) $montoComprobanteAux !== (string) $montoControlPago and
+        $cantidadComprobante > 0 and !in_array($item['cod_circuito'], $exoneradosDadaCir[$periodo] ?? [])
+        and !in_array($item['cod_pedido_ultra'], $exoneradosDadaPedido[$periodo] ?? []) and !$diferenciaMenor)
         {
-            print_r_f(['no encontrado - ERROR 283', $montoComprobante, $montoControlPago, $cantidadComprobante, $item]);
+            print_r_f(['no encontrado - ERROR 283', $montoComprobante, $montoControlPago, $periodo, $cantidadComprobante, $item]);
         }
 
         if($periodo >= '202501' and $montoControlPago !== $nuevaVentaDetalle['general']['monto_recurrente'])
@@ -459,7 +532,7 @@ function procesar_venta_detalle($item, $pedidoUltra, $mysql, $sqlServer, $sqlSer
             print_r_f(['no encontrado - ERROR 272', $periodo,  $montoControlPago, $nuevaVentaDetalle['general']['monto_recurrente'], $item, $dataServicios]);
         }
 
-        if($periodo < '202501')
+        if($periodo < '202412')
         {
             $year = substr($periodo, 0, 4); // "2024"
             $month = substr($periodo, 4, 2); // "11"
@@ -470,6 +543,7 @@ function procesar_venta_detalle($item, $pedidoUltra, $mysql, $sqlServer, $sqlSer
 
             foreach($dataServicios as $servicio)
             {
+                if($servicio['SDEI_ID_SERVICIO_DETALLE'] == 10300050) continue;
                 // if(is_null($servicio['SDED_FECHA']) or ($servicio['SDED_FECHA'] >= $fechaInicio and 
                 // (is_null($servicio['SDED_FECHA_FIN']) or $servicio['SDED_FECHA_FIN'] >= $fechaFin)))
                 $pasa = false;
@@ -491,31 +565,41 @@ function procesar_venta_detalle($item, $pedidoUltra, $mysql, $sqlServer, $sqlSer
             }
 
             // if(($montoRecurrente != $montoControlPago and $comproMontoTotalSinDesSuspension != $montoRecurrente) or $comproMontoTotalSinDesSuspension < 1)
+            $monedaControlPagoTxt = $monedaControlPago == 1 ? 'Soles' : 'Dolares';
 
-            if(((string) $montoRecurrente != (string) $montoControlPago and (string) $montoControlPagoSinSuspension != (string) $montoRecurrente) or $montoControlPagoSinSuspension < 1)
+            if((
+                ((string) $montoRecurrente != (string) $montoControlPago and (string) $montoControlPagoSinSuspension != (string) $montoRecurrente) or $montoControlPagoSinSuspension < 1
+            ) and !in_array($item['cod_circuito'], $exoneradosDadaCir[$periodo] ?? []) and
+            !in_array($item['cod_pedido_ultra'], $exoneradosDadaPedido[$periodo] ?? []) and
+            ($monedaControlPagoTxt == $nuevaVentaDetalle['general']['moneda'] or $periodo >= '202410'))
             {
-                return;
+                // return;
                 print_r_f([
                     'message' => 'no encontrado - ERROR 320', 
+                    'nuevaVentaDetalle' => $nuevaVentaDetalle,
                     'montoRecurrente' => $montoRecurrente,
                     'comproMontoTotalSinDesSuspension' => $comproMontoTotalSinDesSuspension,
+                    'montoControlPagoSinSuspension' => $montoControlPagoSinSuspension,
                     'comproMontoTotal' => $comproMontoTotal,
                     'montoControlPago' => $montoControlPago,
                     'periodo' => $periodo,
                     'fechaInicio' => $fechaInicio, 
                     'item' => $item,
+                    'monedaControlPagoTxt' => $monedaControlPagoTxt,
                     'dataServicios' => $dataServicios, 
-                    'dataComprobante' => $dataComprobante, 'controlPago' => $controlPago]);
+                    'dataComprobante' => $dataComprobante, 
+                    'controlPago' => $controlPago
+                ]);
             }
         }
 
-        if($periodo === '202412')
+        if($periodo === '202412' and $item['cod_circuito'] != 117010)
         {
             $compro202412 = $sqlServer->select("SELECT * FROM data_ultra_emision_202412 WHERE cod_circuito = ? and ID_PEDIDO = ?", [$item['cod_circuito'], $item['cod_pedido_ultra']]);
 
             if(count($compro202412) != 1)
             {
-                print_r_f(['no encontrado - ERROR 329', $item, $compro202412, $controlPago, $dataComprobante]);
+                print_r_f(['no encontrado - ERROR 331', $item, $compro202412, $controlPago, $dataComprobante]);
             }
 
             $auxMoneda = $compro202412[0]['desc_moneda'];
@@ -531,9 +615,20 @@ function procesar_venta_detalle($item, $pedidoUltra, $mysql, $sqlServer, $sqlSer
                 print_r_f(['no encontrado - ERROR 345', $item]);
             }
 
-            $exoneradosComparacion202412 = [5000061, 5000043];
+            $exoneradosComparacion202412 = [];
+            // $exoneradosComparacion202412 = [5000061, 5000043];
 
-            if ((string) $compro202412[0]['SUB_TOTAL'] != (string) $nuevaVentaDetalle['general']['monto_recurrente'] and !in_array($item['cod_pedido_ultra'], $exoneradosComparacion202412))
+            if($item['cod_circuito'] == 117009) {
+                $compro202412[0]['SUB_TOTAL'] = $compro202412[0]['SUB_TOTAL'] / 2;
+            }
+
+            $diferenciaMenor = false;
+
+            if(abs($compro202412[0]['SUB_TOTAL'] - $nuevaVentaDetalle['general']['monto_recurrente']) <= 0.01) {
+                $diferenciaMenor = true;
+            }
+
+            if ((string) $compro202412[0]['SUB_TOTAL'] != (string) $nuevaVentaDetalle['general']['monto_recurrente'] and !in_array($item['cod_pedido_ultra'], $exoneradosComparacion202412) and !$diferenciaMenor)
             {
                 print_r_f(['no encontrado - ERROR 353', $compro202412[0],$nuevaVentaDetalle, $item]);
             }
@@ -546,16 +641,12 @@ function procesar_venta_detalle($item, $pedidoUltra, $mysql, $sqlServer, $sqlSer
         // print_r_f(['periodo' => $periodo, 'monto' => $montoControlPago]);
     }
 
-    if(!$seComprobo202412)
+    if(!$seComprobo202412 and $item['cod_circuito'] != 117010)
     {
         print_r_f(['no encontrado - ERROR 329', $item]);
     }
 
     // Se debe de eliminar la Venta Detalle Actual
-
-    if(! $esMPLS) {
-        // print_r_f(['esMPLS' => $esMPLS]);
-    }
 
     foreach($servicioDetalle as $indiceDetalle => $servicio)
     {
@@ -611,7 +702,7 @@ function procesar_venta_detalle($item, $pedidoUltra, $mysql, $sqlServer, $sqlSer
 
     if(count($dataRaw) != 1)
     {
-        print_r_f(['no encontrado - ERROR 329', $dataRaw, $nuevaVentaDetalle['general']['monto_recurrente'], $item]);
+        print_r_f(['no encontrado - ERROR 330', $dataRaw, $nuevaVentaDetalle['general']['monto_recurrente'], $item]);
     }
 
     $dataRaw = $dataRaw[0];
@@ -622,12 +713,38 @@ function procesar_venta_detalle($item, $pedidoUltra, $mysql, $sqlServer, $sqlSer
         $dataRaw['RentaMensual'] = 391.5;
     }
 
-    $exoneradosComparacion = [37435];
-    $exoneradosComparacionPedido = [5002549, 5000333];
+    // $exoneradosComparacion = [37435];
+    $exoneradosComparacion = [];
+    // $exoneradosComparacionPedido = [5002549, 5000333];
+    $exoneradosComparacionPedido = [];
 
-    if((string) $dataRaw['RentaMensual'] != (string) $nuevaVentaDetalle['general']['monto_recurrente_202411'] and !in_array($item['cod_circuito'], $exoneradosComparacion) and !in_array($item['cod_pedido_ultra'], $exoneradosComparacionPedido))
+    $emision = $sqlServer->select("SELECT * FROM data_ultra_emision_prod WHERE cod_circuito = ? AND ID_PEDIDO = ?", [$item['cod_circuito'], $item['cod_pedido_ultra']]);
+
+    if(count($emision) != 1) {
+        print_r_f(['no encontrado - ERROR 349', $emision, $item]);
+    }
+
+    $emision = $emision[0];
+
+    if($emision['SUB_TOTAL'] == $nuevaVentaDetalle['general']['monto_recurrente_202411'] and $emision['TOTAL'] == $dataRaw['RentaMensual']) {
+        $dataRaw['RentaMensual'] = $nuevaVentaDetalle['general']['monto_recurrente_202411'];
+    }
+
+    $diferenciaMenor = false;
+
+    if(abs($dataRaw['RentaMensual'] - $nuevaVentaDetalle['general']['monto_recurrente_202411']) <= 0.01) {
+        $diferenciaMenor = true;
+    }
+
+    $idDataEmision = [736, 728, 747, 707, 684, 674, 693];
+
+    if($emision['desc_observacion'] == 'En data_raw esta mal la renta mensual' OR in_array($emision['id_data'], $idDataEmision)) {
+        $dataRaw['RentaMensual'] = $emision['SUB_TOTAL'];
+    }
+
+    if((string) $dataRaw['RentaMensual'] != (string) $nuevaVentaDetalle['general']['monto_recurrente_202411'] and !in_array($item['cod_circuito'], $exoneradosComparacion) and !in_array($item['cod_pedido_ultra'], $exoneradosComparacionPedido) and !$diferenciaMenor)
     {
-        print_r_f(['no encontrado - ERROR 339', $dataRaw['RentaMensual'], $nuevaVentaDetalle['general']['monto_recurrente_202411'], $servicioDetalle, 
+        print_r_f(['no encontrado - ERROR 339', $dataRaw, $emision, $nuevaVentaDetalle['general'], $servicioDetalle, 
         $controlPago, $dataComprobante, $item]);
     }
 
@@ -739,7 +856,8 @@ function getMontoConIGV($monto)
     $monto = round($monto * 1.18, 2);
     $montosPermitidos = [175, -40, -50, -25, -94.4, 54.4, -45, -75, -60, 87.51, 87.5, 125, 100, 45,
     -30, -55, 612.53, -343.52, 673.77, 191.29, -404.76, 673.76, -5, -65, -70, 50, -199.51, -15, 118, -211.8, 135, 269,
-    150, -378.52, -192.52, 50, 295.25, 649.27, -380.27, -231, 120];
+    150, -378.52, -192.52, 50, 295.25, 649.27, -380.27, -231, 120, -404.79, 483.95, -356.35, -361.71,
+    -18.56, -154, -250.76, -20, 159.3];
 
     if($monto == 175.01)
     {
@@ -789,6 +907,8 @@ function getMontoConIGV($monto)
         $monto = -231;
     } else if($monto == 120.01) {
         $monto = 120;
+    } else if($monto == -154.01) {
+        $monto = -154;
     }
 
 

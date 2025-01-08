@@ -1,0 +1,15 @@
+UPDATE ventas_general SET nro_doc = '00353411' WHERE nro_doc = '000353411';
+UPDATE pedidos SET cli_nroDoc = '00353411' WHERE cli_nroDoc = '000353411';
+UPDATE winpe_registro_llamada SET nro_doc = '00353411' WHERE nro_doc = '000353411';
+UPDATE bo_valida_reg SET dni_cliente = '00353411' WHERE dni_cliente = '000353411';
+UPDATE ventas_general SET nombre = 'PORTO RICARDO MORAES GALVAO', razon_social = 'PORTO RICARDO MORAES GALVAO' WHERE nro_doc = '01655107';
+UPDATE pedidos SET cli_nom = 'PORTO RICARDO', cli_ape = 'MORAES GALVAO', cli_razonSocial = 'PORTO RICARDO MORAES GALVAO' WHERE cli_nroDoc = '01655107';
+UPDATE winpe_registro_llamada SET nombre = 'PORTO RICARDO', apellido = 'MORAES GALVAO', razon_social = 'PORTO RICARDO MORAES GALVAO' WHERE nro_doc = '01655107';
+UPDATE ventas_general SET nro_doc = '20211001' WHERE nro_doc = '020211001';
+UPDATE pedidos SET cli_nroDoc = '20211001' WHERE cli_nroDoc = '020211001';
+UPDATE winpe_registro_llamada SET nro_doc = '20211001' WHERE nro_doc = '020211001';
+UPDATE bo_valida_reg SET dni_cliente = '20211001' WHERE dni_cliente = '020211001';
+UPDATE ventas_general SET nro_doc = '00001262357' WHERE nro_doc = '001262357';
+UPDATE pedidos SET cli_nroDoc = '00001262357' WHERE cli_nroDoc = '001262357';
+UPDATE winpe_registro_llamada SET nro_doc = '00001262357' WHERE nro_doc = '001262357';
+UPDATE bo_valida_reg SET dni_cliente = '00001262357' WHERE dni_cliente = '001262357';

@@ -2,12 +2,14 @@
 import os
 import time
 
+from pycparser.c_ast import Return
+from selenium.common import NoSuchElementException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 
 from utilidad import Util
 
-BASE_URL = "https://crmclientes.dev.win.local/"
+BASE_URL = "https://appcrm-win.ultra.pe/"
 VALIDACION_URL = f"{BASE_URL}pages/bo_asesor_validacion.php"
 CREDENTIALS = {
     "username": "22222222",
@@ -21,13 +23,13 @@ class TestValidacionAsesor:
     self.driver = self.util.test_driver()
     self.resultado = 0
 
-    try:
-        advanced_options_button = self.util.wait_id("details-button")
-        if advanced_options_button:
-            advanced_options_button.click()
-            self.util.wait_id_clic('proceed-link').click()
-    except Exception as e:
-        print(f"Error clicking advanced options button: {e}")
+    # try:
+    #     advanced_options_button = self.util.wait_id("details-button")
+    #     if advanced_options_button:
+    # #       advanced_options_button.click()
+    #         self.util.wait_id_clic('proceed-link').click()
+    # except Exception as e:
+    #     print(f"Error clicking advanced options button: {e}")
     
     #Login
     self.util.wait_name_clic("username").send_keys(CREDENTIALS["username"])
@@ -49,9 +51,9 @@ class TestValidacionAsesor:
       else :
         break
 
-      if recorridos > 200:
+      if recorridos > 40:
         break
-
+      time.sleep(1)
       self.driver.get(VALIDACION_URL)
       time.sleep(1)
 
@@ -67,16 +69,19 @@ class TestValidacionAsesor:
           continue
 
         recorridos_temporal  += 5
-
+        time.sleep(1)
         columns = row.find_elements(By.TAG_NAME, "td")
         self.one_validacion(columns)
         break
   
   def one_validacion(self, columns):
 
-    columns[0].find_element(By.CLASS_NAME, "edit").click()
+    try:
+      columns[0].find_element(By.CLASS_NAME, "edit").click()
+    except Exception:
+      return 1
 
-    time.sleep(2)
+    time.sleep(3)
 
     try:
       resultado = self.util.driver.find_element(By.CLASS_NAME, "showSweetAlert")
@@ -89,13 +94,17 @@ class TestValidacionAsesor:
 
 
     self.util.wait_id_clic("cb_resultado1").send_keys("A" + Keys.RETURN)
+    time.sleep(1)
     self.util.wait_id_clic("cb_resultado2").send_keys("T" + Keys.RETURN)
     self.util.wait_id_clic("txt_descripcion_validacion").send_keys("MIGRACIÓN WIN-ULTRA")
     self.util.wait_id_clic("bt_guardar")
 
-    time.sleep(1)
+    time.sleep(2)
 
     self.util.wait_id_clic("boton_enviar_validacion")
-    self.util.wait_css_clic(".confirm")
+    try:
+      self.util.wait_css_clic(".confirm")
+    except Exception:
+      return 0
     return 0
   

@@ -21,7 +21,7 @@ class Util:
         try:
             conn = self.conexion_db()
             cursor = conn.cursor()
-            cursor.execute("SELECT id_data as id, desc_latitud as latitud, desc_longitud as longitud, 'MIGRACIÓN WIN-ULTRA' as observacion, " +
+            cursor.execute("SELECT top 30 id_data as id, desc_latitud as latitud, desc_longitud as longitud, 'MIGRACIÓN WIN-ULTRA' as observacion, " +
                            "nro_documento as dni, desc_celular as celular, desc_correo as correo, tipo_documento as tipodoc, " +
                            "tipo_vivienda as tipoviv, representante_tipo_doc as rtipodoc, representante_nro_doc as rdni, " + 
                            "nombres, ape_paterno as paterno, ape_materno as materno, representante_nombres as rnombres, " + 

@@ -1,12 +1,14 @@
+return;
+
 USE PE_OPTICAL_ADM;
 
 SET LANGUAGE Spanish
-/*
-IF OBJECT_ID('data_ultra_emision_202412', 'U') IS NOT NULL
-    DROP TABLE data_ultra_emision_202412;
+
+IF OBJECT_ID('data_ultra_emision_prod_new', 'U') IS NOT NULL
+    DROP TABLE data_ultra_emision_prod_new;
 
 
-CREATE TABLE data_ultra_emision_202412 (
+CREATE TABLE data_ultra_emision_prod_new (
     CAT VARCHAR(50), -- Categoría, tipo de dato más flexible
     SITU VARCHAR(50), -- Situación
     TDOC VARCHAR(10), -- Tipo de documento
@@ -43,7 +45,30 @@ CREATE TABLE data_ultra_emision_202412 (
     RED VARCHAR(50), -- Red
     MONTO_FACT_SOLARIZ VARCHAR(50) -- Monto facturado solarizado
 );
-*/
+
+select * from data_ultra_emision_prod_new
+
+exec xp_cmdshell 'dir \\10.24.100.13\DEV_Uploads\PROY-0002-2024FC-WIN-Facturacion-para-clientesULTRA-FASE-3\'
+exec xp_cmdshell 'ping 10.1.4.81'
+EXEC xp_cmdshell 'curl -o C:\Users\Public\Downloads\Fact_202412.csv http://10.1.4.81:280/Fact_202412.csv';
+EXEC xp_cmdshell 'dir C:\Users\Public\Downloads';
+
+exec xp_cmdshell 'net use \\10.24.100.13\DEV_Uploads\PROY-0002-2024FC-WIN-Facturacion-para-clientesULTRA-FASE-3\ /user:fherrerab@win.pe Win.123$ /persistent:yes'
+
+USE PE_OPTICAL_ADM;
+
+SET LANGUAGE Spanish
+
+BULK INSERT data_ultra_emision_prod_new
+        FROM 'C:\Users\Public\Downloads\Fact_202412.csv'
+            WITH
+    (
+                FIELDTERMINATOR = ';',
+                ROWTERMINATOR = '\n',
+				FIRSTROW = 2
+    )
+GO 
+
 ALTER TABLE data_ultra_procesado
 ADD 
 	desc_activacion_habil VARCHAR NOT NULL DEFAULT '',
@@ -150,7 +175,8 @@ AND concat(p.cod_circuito, '-', p.cod_pedido_ultra) in
 SELECT p.cod_pedido_pf_ultra, d.*
 FROM data_ultra_procesado p
 INNER JOIN data_ultra_proc_detalle d ON p.cod_circuito = d.cod_circuito and p.cod_pedido_ultra = d.cod_pedido_ultra
-where p.cod_pedido_pf_ultra <> 0 AND p.desc_activacion_habil = 'HABILITADO' AND p.desc_observacion_activacion = 'OK'
+where p.cod_pedido_pf_ultra <> 0 AND p.desc_activacion_
+= 'HABILITADO' AND p.desc_observacion_activacion = 'OK'
 AND p.cod_pedido_ultra = 0 and p.cod_circuito = 29640
 
 

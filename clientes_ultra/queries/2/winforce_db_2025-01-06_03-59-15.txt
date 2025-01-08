@@ -1,0 +1,6 @@
+UPDATE tp_clientes SET cli_num_doc = '00353411' WHERE cli_num_doc = '000353411';
+UPDATE tp_clientes SET cli_nom = 'PORTO RICARDO' WHERE cli_num_doc = '01655107';
+UPDATE tp_clientes SET cli_ape_pat = 'MORAES' WHERE cli_num_doc = '01655107';
+UPDATE tp_clientes SET cli_ape_mat = 'GALVAO' WHERE cli_num_doc = '01655107';
+UPDATE tp_clientes SET cli_num_doc = '20211001' WHERE cli_num_doc = '020211001';
+UPDATE tp_clientes SET cli_num_doc = '00001262357' WHERE cli_num_doc = '001262357';

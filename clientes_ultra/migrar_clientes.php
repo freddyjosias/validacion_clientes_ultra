@@ -666,21 +666,6 @@ function convertCodModenaToDescription($codModena) {
     }
 }
 
-function normalizarTextoCharcater($texto): string
-{
-    $texto = str_replace('+æ', 'Ñ', $texto);
-    $texto = str_replace('´+¢', 'Ñ', $texto);
-    $texto = str_replace('+ì', 'Í', $texto);
-    $texto = str_replace('+¡', 'í', $texto);
-    $texto = str_replace('+¦', 'ó', $texto);
-    $texto = str_replace('+í', 'á', $texto);
-    $texto = str_replace('+ô', 'Ó', $texto);
-    $texto = str_replace('+ü', 'Á', $texto);
-    $texto = str_replace('+£', 'Ü', $texto);
-    $texto = str_replace('+®', 'é', $texto);
-    return str_replace('+ë', 'É', $texto);
-}
-
 function eliminarTildes($texto): string
 {
     $texto = str_replace('Ú', 'U', $texto);

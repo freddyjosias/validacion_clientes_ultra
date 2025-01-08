@@ -78,3 +78,24 @@ function validateOfertaXVelocidad($oferta, $velocidad) {
 
     return false;
 }
+
+function normalizarTextoCharcater($texto): string
+{
+    $texto = str_replace('+æ', 'Ñ', $texto);
+    $texto = str_replace('´+¢', 'Ñ', $texto);
+    $texto = str_replace('+ì', 'Í', $texto);
+    $texto = str_replace('+¡', 'í', $texto);
+    $texto = str_replace('+¦', 'ú', $texto);
+    $texto = str_replace('+í', 'á', $texto);
+    $texto = str_replace('+ô', 'Ó', $texto);
+    $texto = str_replace('+ü', 'Á', $texto);
+    $texto = str_replace('+£', 'Ü', $texto);
+    $texto = str_replace('+®', 'é', $texto);
+    $texto = str_replace('+Ê', 'È', $texto);
+    return str_replace('+ë', 'É', $texto);
+}
+
+function quitar_tildes($cadena)
+{
+    return str_replace(['á', 'é', 'í', 'ó', 'ú', 'Á', 'É', 'Í', 'Ó', 'Ú'], ['a', 'e', 'i', 'o', 'u', 'A', 'E', 'I', 'O', 'U'], $cadena);
+}
