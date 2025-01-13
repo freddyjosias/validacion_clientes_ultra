@@ -365,6 +365,85 @@ select desc_observacion, COUNT(*) cantidad
 from data_ultra_raw where flg_migrado = 1 and desc_observacion <> 'OK'
 GROUP BY desc_observacion
 
+select * from data_ultra_emision where cod_circuito = 37906
+
+select distinct desc_activacion_habil, desc_observacion_activacion from data_ultra_procesado
+
+select * from data_ultra_procesado where desc_activacion_habil = ''
+
+
+select cod_pedido_pf_ultra, * from data_ultra_procesado order by 1
+
+-- #temp_comprobantes
+SELECT * FROM #temp_comprobantes
+
+select desc_situacion [SITUACION], 
+e.cli_nro_doc [NRO DOCUMENTO],
+e.compro_nro_doc [COMPROBANTE],
+CASE WHEN e.cod_circuito = 0 THEN '' ELSE CAST(e.cod_circuito AS VARCHAR(20)) END [COD CIRCUITO],
+CASE WHEN e.ID_PEDIDO = 0 THEN '' ELSE CAST(e.ID_PEDIDO AS VARCHAR(20)) END [ID PEDIDO],
+e.desc_cliente [CLIENTE],
+CASE
+	WHEN desc_situacion <> 'COBR' THEN 'El comprobante del 12/2024 no esta cobrado'
+	WHEN e.cod_circuito <> 0 AND e.cod_circuito NOT IN (select CircuitoCod from data_ultra_raw) THEN 'Sin información del circuito/pedido'
+	WHEN e.ID_PEDIDO <> 0 AND e.ID_PEDIDO NOT IN (select IdPedido from data_ultra_raw where IdPedido <> '-') THEN 'Sin información del circuito/pedido'
+	WHEN e.cod_circuito = 0 AND e.ID_PEDIDO = 0 THEN 'Sin información del circuito/pedido'
+	ELSE 'Sin información del estado actual del circuito'
+END [OBSERVACION] --,
+-- p.desc_activacion_habil, p.desc_observacion_activacion ,
+-- e.cod_circuito , e .ID_PEDIDO, p.cod_pedido_pf_ultra , c.*, e.*
+from data_ultra_emision e
+left join data_ultra_procesado p on e.cod_circuito = p.cod_circuito and e.ID_PEDIDO = p.cod_pedido_ultra
+LEFT JOIN #temp_comprobantes c on c.COMC_PEDI_COD_PEDIDO = p.cod_pedido_pf_ultra
+where e.es_sva = 0  and c.COMC_COD_COMPROBANTE IS NULL and (p.cod_pedido_pf_ultra not in (select * from #temp_carga_exclusiones) or p.cod_pedido_pf_ultra is null)
+
+
+
+
+
+
+SELECT cod_pedido_pf_ultra, COUNT(*) FROM data_ultra_procesado GROUP BY cod_pedido_pf_ultra ORDER BY 2 
+
+select * from data_ultra_procesado
+
+UPDATE d
+SET d.cod_pedido_pf_ultra = P.PEDI_COD_PEDIDO
+FROM data_ultra_procesado d
+inner join #temp_pedido p ON d.nro_documento = p.PEDV_NUM_DOCUMENTO
+where d.cod_pedido_pf_ultra = 0
+
+
+select *
+from data_ultra_procesado d
+inner join #temp_pedido p ON d.nro_documento = p.PEDV_NUM_DOCUMENTO
+where d.cod_pedido_pf_ultra = 0
+
+
+
+select *
+into #temp_comprobantes
+from OPENQUERY(ULTRACRM, 'SELECT * FROM db_wincrm_ultra_010725.CRM_COMPROBANTE_FACT')
+
+
+update p
+set p.desc_activacion_habil = (CASE WHEN e.desc_situacion = 'COBR' THEN 'HABILITADO' ELSE 'NO HABILITADO' END),
+ p.desc_observacion_activacion = (CASE WHEN e.desc_situacion = 'COBR' THEN 'ok' ELSE 'El comprobante del 12/2024 no esta cobrado' END)
+FROM data_ultra_procesado p
+inner join data_ultra_emision e ON e.ID_PEDIDO = p.cod_pedido_ultra
+WHERE p.cod_pedido_ultra <> 0 AND e.ID_PEDIDO <> 0
+
+SELECT * 
+FROM data_ultra_procesado p
+inner join data_ultra_emision e ON e.ID_PEDIDO = p.cod_pedido_ultra
+WHERE p.cod_pedido_ultra <> 0 AND e.ID_PEDIDO <> 0
+
+select * from  #temp_carga_exclusiones
+
+insert into #temp_carga_exclusiones
+select *
+-- into #temp_carga_exclusiones
+from OPENQUERY(ULTRACRM, 'SELECT distinct id_pedido FROM db_wincrm_ultra_010725.t_carga_exclusiones')
+
 
 
 select desc_observacion, COUNT(*) 
@@ -383,7 +462,11 @@ select desc_observacion, COUNT(*)
 from data_ultra_raw where flg_migrado = 1 and desc_observacion <> 'OK'
 GROUP BY desc_observacion
 
+SELECT * FROM data_ultra_procesado
 
+alter table data_ultra_procesado add flg_config_address tinyint not null default 0
+alter table data_ultra_procesado add desc_ubigeo VARCHAR(20) not null default ''
+select * from data_ultra_procesado
 
 select num_documento, count(*)
 from data_raw_ultra_bk2

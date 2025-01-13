@@ -3,9 +3,9 @@
 require_once __DIR__ . '/../connection.php';
 require_once __DIR__ . '/../functions.php';
 
-const DB_MYSQL_WINCRM_ULTRA = 'db_wincrm_prod';
+const DB_MYSQL_WINCRM_ULTRA = 'db_wincrm_ultra_010725';
 const DB_MYSQL_WINFORCE_ULTRA = 'winforce_db_prod';
-const TABLE_DATA_ULTRA_PROCESADO = 'data_ultra_procesado_prod';
+const TABLE_DATA_ULTRA_PROCESADO = 'data_ultra_procesado';
 
 $sqlServer = new SQLServerConnection('10.1.4.20', 'PE_OPTICAL_ADM', 'PE_OPTICAL_ERP', 'Optical123+');
 $sqlServer->connect();
@@ -231,15 +231,16 @@ foreach($resultados as $index => $fila)
         continue;
     }
     else {
-        print_r_f(['no encontrado 5', $cantPedidosEncontrados, $fila, $dataPedido, $pedidosWinforce]);
+        // continue;
+        // print_r_f(['no encontrado 5', $cantPedidosEncontrados, $fila, $dataPedido, $pedidosWinforce]);
     }
 
     $cantidadNoEncontrados++;
     continue;
 
-    print_r_f([$fila, $pedidoEntontrado, $resultadosIgualdad, $pedidosWinforce]);
+    // print_r_f([$fila, $pedidoEntontrado, $resultadosIgualdad, $pedidosWinforce]);
 
-    print_r_f(['start', $fila]);
+    // print_r_f(['start', $fila]);
 
     $pedidosUltra = $mysql->select("SELECT P.PEDI_COD_PEDIDO, C.CLIV_NUMERO_DOCUMENTO, D.DIRN_LATITUD, D.DIRN_LONGITUD, 
     UPPER(U1.UBIV_DESCRIPCION) desc_distrito, UPPER(U2.UBIV_DESCRIPCION) desc_provincia, O.OFTV_NOMBRE

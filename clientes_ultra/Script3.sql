@@ -8,7 +8,7 @@ IF OBJECT_ID('data_ultra_emision_prod_new', 'U') IS NOT NULL
     DROP TABLE data_ultra_emision_prod_new;
 
 
-CREATE TABLE data_ultra_emision_prod_new (
+CREATE TABLE data_ultra_emision_new (
     CAT VARCHAR(50), -- Categoría, tipo de dato más flexible
     SITU VARCHAR(50), -- Situación
     TDOC VARCHAR(10), -- Tipo de documento
@@ -59,7 +59,7 @@ USE PE_OPTICAL_ADM;
 
 SET LANGUAGE Spanish
 
-BULK INSERT data_ultra_emision_prod_new
+BULK INSERT data_ultra_emision_new
         FROM 'C:\Users\Public\Downloads\Fact_202412.csv'
             WITH
     (

@@ -9,7 +9,7 @@ $sqlServer->connect();
 
 $resultados = $sqlServer->select("SELECT a.id_data, a.cli_nro_doc, a.codigo_cliente_pago, C.CLII_ID_CLIENTE id_cliente,
 a.desc_moneda, compro_nro_doc
-FROM data_ultra_emision_prod a
+FROM data_ultra_emision a
 INNER JOIN ECOM.ECOM_CLIENTE C ON C.CLIV_CODIGO_CLIENTE = a.codigo_cliente_pago
 WHERE a.flg_status_habil = 1 AND a.cod_circuito = 0 AND a.RED = 'MPLS' and a.cli_nro_doc NOT IN ('-') 
 order by cli_nro_doc");
@@ -27,7 +27,7 @@ foreach ($resultados as $fila) {
 
     $auxDataCliente = $sqlServer->select("SELECT a.id_data, a.cli_nro_doc, a.cod_circuito, a.desc_situacion, a.desc_moneda, a.SUB_TOTAL, a.compro_nro_doc,
     a.TOTAL
-    FROM data_ultra_emision_prod a
+    FROM data_ultra_emision a
     WHERE a.flg_status_habil = 1 AND a.cli_nro_doc = ? AND a.RED = 'MPLS' order by SUB_TOTAL", [$fila['cli_nro_doc']]);
 
     if (count($auxDataCliente) > 1)
@@ -79,7 +79,7 @@ foreach ($resultados as $fila) {
             $dataRaw = $sqlServer->select("SELECT RUC, CircuitoCod, RentaMensual, Moneda FROM data_ultra_raw WHERE CircuitoCod IS NOT NULL AND( RUC = ? OR RUC = ? ) ORDER BY CAST(LTRIM(RTRIM(REPLACE(RentaMensual, 'S/', ''))) AS FLOAT)", [$intCliNroDoc, $fila['cli_nro_doc']]);
 
             if(count($dataRaw) == 0) {
-                $sqlServer->update("UPDATE data_ultra_emision_prod SET desc_observacion = 'No tiene registro en data_ultra_raw', flg_status_habil = 0
+                $sqlServer->update("UPDATE data_ultra_emision SET desc_observacion = 'No tiene registro en data_ultra_raw', flg_status_habil = 0
                 WHERE id_data = ? AND cli_nro_doc = ?", [$fila['id_data'], $fila['cli_nro_doc']]);
                 continue;
             }
@@ -121,7 +121,7 @@ foreach ($resultados as $fila) {
             $dataRaw = $sqlServer->select("SELECT RUC, CircuitoCod FROM data_ultra_raw WHERE CircuitoCod IS NOT NULL AND ( RUC = ? OR RUC = ? )", [$intCliNroDoc, $fila['cli_nro_doc']]);
 
             if(count($dataRaw) == 0) {
-                $sqlServer->update("UPDATE data_ultra_emision_prod SET desc_observacion = 'No tiene registro en data_ultra_raw', flg_status_habil = 0
+                $sqlServer->update("UPDATE data_ultra_emision SET desc_observacion = 'No tiene registro en data_ultra_raw', flg_status_habil = 0
                 WHERE id_data = ? AND cli_nro_doc = ?", [$fila['id_data'], $fila['cli_nro_doc']]);
                 continue;
             }
@@ -137,7 +137,7 @@ foreach ($resultados as $fila) {
 
         foreach ($auxDataCliente as $index => $item)
         {
-            $sqlServer->update("UPDATE data_ultra_emision_prod SET cod_circuito = ?, desc_observacion = 'ok' WHERE id_data = ? AND cli_nro_doc = ?", [$dataRaw[$index]['CircuitoCod'], $item['id_data'], $fila['cli_nro_doc']]);
+            $sqlServer->update("UPDATE data_ultra_emision SET cod_circuito = ?, desc_observacion = 'ok' WHERE id_data = ? AND cli_nro_doc = ?", [$dataRaw[$index]['CircuitoCod'], $item['id_data'], $fila['cli_nro_doc']]);
         }
 
         $excluir[] = $fila['cli_nro_doc'];
@@ -157,7 +157,7 @@ foreach ($resultados as $fila) {
 
     if (count($dataRaw) == 0)
     {
-        $sqlServer->update("UPDATE data_ultra_emision_prod SET desc_observacion = 'No tiene registro en data_ultra_raw', flg_status_habil = 0
+        $sqlServer->update("UPDATE data_ultra_emision SET desc_observacion = 'No tiene registro en data_ultra_raw', flg_status_habil = 0
         WHERE id_data = ? AND cli_nro_doc = ?", [$auxDataCliente['id_data'], $fila['cli_nro_doc']]);
 
         continue;
@@ -209,7 +209,7 @@ foreach ($resultados as $fila) {
 
     // print_r_f([$dataRaw, $auxDataCliente, $fila]);
 
-    $sqlServer->update("UPDATE data_ultra_emision_prod SET cod_circuito = ?, desc_observacion = 'ok' WHERE id_data = ? AND cli_nro_doc = ?", [$dataRaw['CircuitoCod'], $auxDataCliente['id_data'], $fila['cli_nro_doc']]);
+    $sqlServer->update("UPDATE data_ultra_emision SET cod_circuito = ?, desc_observacion = 'ok' WHERE id_data = ? AND cli_nro_doc = ?", [$dataRaw['CircuitoCod'], $auxDataCliente['id_data'], $fila['cli_nro_doc']]);
 
     // print_r_f([$fila, $auxDataCliente, $dataRaw]);
 }

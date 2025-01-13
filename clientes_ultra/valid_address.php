@@ -16,9 +16,9 @@ $mysql->connect();
 $resultados = $sqlServer->select("SELECT d.id_data, d.cod_circuito, d.nro_documento, d.flg_config_address, d.cod_pedido_ultra, d.desc_direccion,
 r.Direccion, s.SERV_DIRECCION, r.Latitud, r.Longitud, desc_latitud, desc_longitud, desc_distrito, desc_provincia, desc_region, desc_ubigeo,
 cod_pedido_pf_ultra
-FROM data_ultra_procesado_prod d
+FROM data_ultra_procesado d
 INNER JOIN data_ultra_raw r ON d.cod_circuito = r.CircuitoCod OR d.cod_pedido_ultra = (CASE WHEN r.IdPedido = '-' THEN -1 ELSE r.IdPedido END)
-INNER JOIN PE_OPTICAL_ADM_PROD_20250103_103852.ECOM.ECOM_SERVICIO s ON s.SERI_ID_SERVICIO = d.ecom_id_servicio
+INNER JOIN PE_OPTICAL_ADM.ECOM.ECOM_SERVICIO s ON s.SERI_ID_SERVICIO = d.ecom_id_servicio
 WHERE flg_config_address = 0 and d.cod_pedido_pf_ultra <> 0
 order by d.id_data");
 
@@ -174,7 +174,7 @@ foreach ($resultados as $fila)
                 $address['des_direccion_final'] = 'AV. CIRCUNVALACION DEL GOLF LOS INCAS NRO 1033 PISO 6 RESIDENCIA 1 MZ. 1 LT. 1 [SANTIAGO DE SURCO - LIMA - LIMA]';
             }
 
-            $resultUpdate = $sqlServer->update("UPDATE data_ultra_procesado_prod SET desc_direccion = ?, desc_latitud = ?, desc_longitud = ?, 
+            $resultUpdate = $sqlServer->update("UPDATE data_ultra_procesado SET desc_direccion = ?, desc_latitud = ?, desc_longitud = ?, 
             desc_distrito = ?, desc_provincia = ?, desc_region = ?, desc_ubigeo = ? WHERE id_data = ?", [$address['des_direccion_final'], $address['sed_map_x'], $address['sed_map_y'], $ubigeoResult['distrito'], $ubigeoResult['provincia'], $ubigeoResult['region'], $address['dir_ubigeo'], $fila['id_data']]);
 
             continue;
@@ -234,7 +234,7 @@ foreach ($resultados as $fila)
 
             $fila['SERV_DIRECCION'] = quitar_tildes($fila['SERV_DIRECCION']);
             
-            $resultUpdate = $sqlServer->update("UPDATE data_ultra_procesado_prod SET desc_direccion = ?, desc_latitud = ?, desc_longitud = ?, 
+            $resultUpdate = $sqlServer->update("UPDATE data_ultra_procesado SET desc_direccion = ?, desc_latitud = ?, desc_longitud = ?, 
             desc_distrito = ?, desc_provincia = ?, desc_region = ?, desc_ubigeo = ? WHERE id_data = ?", [$fila['SERV_DIRECCION'], $getUbigeo['desc_latitud'], $getUbigeo['desc_longitud'], $getUbigeo['desc_distrito'], $getUbigeo['desc_provincia'], $getUbigeo['desc_region'], $getUbigeo['ubigeo'], $fila['id_data']]);
 
             continue;
@@ -272,7 +272,7 @@ foreach ($resultados as $fila)
         }
         else
         {
-            $resultUpdate = $sqlServer->update("UPDATE data_ultra_procesado_prod SET flg_config_address = 1 WHERE id_data = ?", [$fila['id_data']]);
+            $resultUpdate = $sqlServer->update("UPDATE data_ultra_procesado SET flg_config_address = 1 WHERE id_data = ?", [$fila['id_data']]);
         }
 
         continue;

@@ -11,7 +11,7 @@ $postgres = new PostgreSQLConnection('10.1.4.25', '5432', 'opticalip_de', 'postg
 $postgres->connect();
 
 $resultados = $sqlServer->select("SELECT id_data, nro_documento, id_cliente_intranet, cod_pedido_ultra, cod_circuito, desc_oferta,
-desc_producto FROM data_ultra_procesado_uat WHERE flg_validate_plan = 0 order by id_data");
+desc_producto FROM data_ultra_procesado WHERE flg_validate_plan = 0 order by id_data");
 
 $totalResultados = count($resultados);
 $totalRecorridos = 0;
@@ -31,7 +31,7 @@ foreach($resultados as $index => $fila)
         print_r_f('ERROR');
     }
 
-    $sqlServer->update("UPDATE data_ultra_procesado_uat SET flg_validate_plan = 1, updated_at = getdate() WHERE id_data = ?", [$fila['id_data']]);
+    $sqlServer->update("UPDATE data_ultra_procesado SET flg_validate_plan = 1, updated_at = getdate() WHERE id_data = ?", [$fila['id_data']]);
 
     $totalRecorridos++;
     $totalRecorridosPorcentaje = (int) (($totalRecorridos / $totalResultados) * 100);
@@ -58,7 +58,7 @@ function validar_plan_producto_gpon(array $dataProcesada, $sqlServer)
 
     $data = $data[0];
     
-    $resultados = $sqlServer->select("select * from data_raw_ultra_bk2 WHERE cod_pedido_ultra = ?", [$data['IdPedido']]);
+    $resultados = $sqlServer->select("select * from data_ultra_gpon_raw WHERE cod_pedido_ultra = ?", [$data['IdPedido']]);
 
     if(count($resultados) != 1) {
         print_r_f($resultados);
@@ -134,17 +134,17 @@ function validar_plan_producto_mpls(array $dataProcesada, $postgres, $sqlServer)
         $dataProcesada['id_cliente_intranet'] = 12442;
     }
 
-    if($dataProcesada['nro_documento'] == '001262357' and $resultados['cli_nro_ruc'] == '00001262357') {
-        $resultados['cli_nro_ruc'] = '001262357';
-    }
+    // if($dataProcesada['nro_documento'] == '001262357' and $resultados['cli_nro_ruc'] == '00001262357') {
+    //     $resultados['cli_nro_ruc'] = '001262357';
+    // }
 
-    if($dataProcesada['nro_documento'] == '000733531' and $resultados['cli_nro_ruc'] == '00000733531') {
-        $resultados['cli_nro_ruc'] = '000733531';
-    }
+    // if($dataProcesada['nro_documento'] == '000733531' and $resultados['cli_nro_ruc'] == '00000733531') {
+    //     $resultados['cli_nro_ruc'] = '000733531';
+    // }
 
-    if($dataProcesada['nro_documento'] == '000574646' and $resultados['cli_nro_ruc'] == '00000574646') {
-        $resultados['cli_nro_ruc'] = '000574646';
-    }
+    // if($dataProcesada['nro_documento'] == '000574646' and $resultados['cli_nro_ruc'] == '00000574646') {
+    //     $resultados['cli_nro_ruc'] = '000574646';
+    // }
 
     $resultados['serv_descripcion'] = trim($resultados['serv_descripcion']);
     $data['TipoServicio'] = trim($data['TipoServicio']);
