@@ -5,8 +5,8 @@ require_once __DIR__ . '/../functions.php';
 require_once __DIR__ . '/get_razon_social.php';
 require_once __DIR__ . '/helper.php';
 
-const DB_MYSQL_WINCRM_ULTRA = 'db_wincrm_prod';
-const TABLE_DATA_ULTRA_PROCESADO = 'data_ultra_procesado_prod';
+const DB_MYSQL_WINCRM_ULTRA = 'db_wincrm_250115';
+const TABLE_DATA_ULTRA_PROCESADO = 'data_ultra_procesado';
 
 $sqlServer = new SQLServerConnection('10.1.4.20', 'PE_OPTICAL_ADM', 'PE_OPTICAL_ERP', 'Optical123+');
 $sqlServer->connect();
@@ -19,7 +19,7 @@ $mysql->connect();
 // INNER JOIN CRM_CLIENTE C ON P.PEDI_COD_CLIENTE = C.CLII_COD_CLIENTE
 // where flg_validado = 0");
 
-$resultados = $sqlServer->select("SELECT d.cod_circuito, d.cod_pedido_ultra, d.cod_pedido_pf_ultra,
+$resultados = $sqlServer->select("SELECT top 23  d.cod_circuito, d.cod_pedido_ultra, d.cod_pedido_pf_ultra,
     d.id_data, d.flg_nombre_validado, d.flg_check_nom_v2, CC.CLIV_NRO_RUC ecom_nro_documento, CC.CLIV_RAZON_SOCIAL ecom_razon_social,
     d.nro_documento proce_nro_documento,
     CASE WHEN d.nombres <> '' then d.nombres else d.razon_social end proce_nombres,
@@ -28,11 +28,11 @@ $resultados = $sqlServer->select("SELECT d.cod_circuito, d.cod_pedido_ultra, d.c
     e.cli_nro_doc emision_nro_documento, e.desc_cliente emision_razon_social, desc_observacion_activacion
     FROM " . TABLE_DATA_ULTRA_PROCESADO . " d
     INNER JOIN data_ultra_raw r ON d.cod_circuito = r.CircuitoCod OR d.cod_pedido_ultra = (CASE WHEN r.IdPedido = '-' THEN -1 ELSE r.IdPedido END)
-    LEFT JOIN data_ultra_emision_prod e ON d.cod_circuito = e.cod_circuito and d.cod_pedido_ultra = e.ID_PEDIDO
-    inner join PE_OPTICAL_ADM_PORTAL.ECOM.ECOM_CONTRATO CO ON d.ecom_id_contrato = CO.CONI_ID_CONTRATO
-    INNER JOIN PE_OPTICAL_ADM_PORTAL.ECOM.ECOM_EMPRESA_CLIENTE EP ON CO.EMCI_ID_EMP_CLI = EP.EMCI_ID_EMP_CLI
-    INNER JOIN PE_OPTICAL_ADM_PORTAL.ECOM.ECOM_CLIENTE CC ON EP.CLII_ID_CLIENTE = CC.CLII_ID_CLIENTE
-    WHERE d.flg_nombre_validado = 0 order by d.id_data");
+    LEFT JOIN data_ultra_emision e ON d.cod_circuito = e.cod_circuito and d.cod_pedido_ultra = e.ID_PEDIDO
+    inner join PE_OPTICAL_ADM.ECOM.ECOM_CONTRATO CO ON d.ecom_id_contrato = CO.CONI_ID_CONTRATO
+    INNER JOIN PE_OPTICAL_ADM.ECOM.ECOM_EMPRESA_CLIENTE EP ON CO.EMCI_ID_EMP_CLI = EP.EMCI_ID_EMP_CLI
+    INNER JOIN PE_OPTICAL_ADM.ECOM.ECOM_CLIENTE CC ON EP.CLII_ID_CLIENTE = CC.CLII_ID_CLIENTE
+    WHERE d.flg_nombre_validado = 0 order by cod_pedido_pf_ultra desc");
 
 $cantidadAcierto = 0;
 $cantidadError = 0;
@@ -433,10 +433,10 @@ foreach($resultados as $index => $fila)
 }
 
 
-/*
+
 if($query != '')
 {
-    print_r_f($query);
+    // print_r_f($query);
 }
 
 $nombreArchivo = "queries/wincrm_db_" . date("Y-m-d_H-i-s") . ".txt";
@@ -467,6 +467,6 @@ if ($archivo)
 {
     fwrite($archivo, $querySQLMySQLCRMExp);
     fclose($archivo);
-} */
+} 
 
 print_r_f('ok :)');

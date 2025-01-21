@@ -13,7 +13,7 @@ import pandas as pd
 import random
 import string
 
-DATABASE_NAME_TABLE = 'data_ultra_procesado_prod'
+DATABASE_NAME_TABLE = 'data_ultra_procesado'
 
 class Util:
 
@@ -56,7 +56,7 @@ class Util:
                 
         if( self.tipobd == 0):
             self.db_config = {
-                'host': '10.1.4.82',       # Cambia por tu host de MySQL
+                'host': '10.1.4.81',       # Cambia por tu host de MySQL
                 'user': 'root',      # Cambia por tu usuario de MySQL
                 'port': '13306',
                 'password': 'R007w1N0r3',  # Cambia por tu contraseña de MySQL

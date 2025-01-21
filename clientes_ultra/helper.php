@@ -62,7 +62,7 @@ function validateOfertaXVelocidad($oferta, $velocidad) {
 
     if($oferta == 'Ultra 1000' and $velocidad == '1 Gbps') {
         return true;
-    } else if(($oferta == 'Ultra 600' or $oferta == 'Ultra 1000' or $oferta == 'ULTRA 600') and $velocidad == '600 Mbps') {
+    } else if(($oferta == 'Ultra 600' or $oferta == 'Ultra 1000' or $oferta == 'ULTRA 600') and $velocidad == '600Mbps') {
         return true;
     } else if($oferta == 'Ultra 600' and $velocidad == '600 Mbps') {
         return true;

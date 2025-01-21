@@ -3,9 +3,9 @@
 require_once __DIR__ . '/../connection.php';
 require_once __DIR__ . '/../functions.php';
 
-const DB_MYSQL_WINCRM_ULTRA = 'db_wincrm_prod';
-const TABLE_DATA_ULTRA_PROCESADO = 'data_ultra_procesado_prod';
-const TABLE_DATA_ULTRA_PROC_DETALLE = 'data_ultra_proc_detalle_pr';
+const DB_MYSQL_WINCRM_ULTRA = 'db_wincrm_250115';
+const TABLE_DATA_ULTRA_PROCESADO = 'data_ultra_procesado';
+const TABLE_DATA_ULTRA_PROC_DETALLE = 'data_ultra_proc_detalle';
 
 $sqlServer = new SQLServerConnection('10.1.4.20', 'PE_OPTICAL_ADM', 'PE_OPTICAL_ERP', 'Optical123+');
 $sqlServer->connect();

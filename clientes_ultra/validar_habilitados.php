@@ -30,7 +30,7 @@ foreach ($resultados as $fila)
         $arrayNoPasa = ['Tiene OT de decremento de renta - OT de Baja'];
 
         $cirPasa = [37906, 75056, 79710];
-        $cirNoPasaBaja = [54897];
+        $cirNoPasaBaja = [54897,42075,59826];
 
         if(in_array($data['desc_observacion'], $arrayPasa) or in_array($fila['cod_circuito'], $cirPasa))
         {

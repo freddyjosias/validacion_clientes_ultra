@@ -3,14 +3,14 @@
 require_once __DIR__ . '/../connection.php';
 require_once __DIR__ . '/../functions.php';
 
-const DB_MYSQL_WINCRM_ULTRA = 'db_wincrm_prod';
-const TABLE_DATA_ULTRA_PROCESADO = 'data_ultra_procesado_prod';
-const TABLE_DATA_ULTRA_PROC_DETALLE = 'data_ultra_proc_detalle_pr';
+const DB_MYSQL_WINCRM_ULTRA = 'db_wincrm_250115';
+const TABLE_DATA_ULTRA_PROCESADO = 'data_ultra_procesado';
+const TABLE_DATA_ULTRA_PROC_DETALLE = 'data_ultra_proc_detalle';
 
 $sqlServer = new SQLServerConnection('10.1.4.20', 'PE_OPTICAL_ADM', 'PE_OPTICAL_ERP', 'Optical123+');
 $sqlServer->connect();
 
-$sqlServerActual = new SQLServerConnection('10.1.4.20', 'PE_OPTICAL_ADM_PROD_20250106_090317', 'PE_OPTICAL_ERP', 'Optical123+');
+$sqlServerActual = new SQLServerConnection('10.1.4.20', 'PE_OPTICAL_ADM', 'PE_OPTICAL_ERP', 'Optical123+');
 $sqlServerActual->connect();
 
 $mysql = new MySQLConnection('10.1.4.81:33061', DB_MYSQL_WINCRM_ULTRA, 'root', 'R007w1N0r3');
@@ -21,9 +21,10 @@ p.ecom_id_servicio, p.ecom_id_contrato, p.cod_pedido_pf_ultra, p.desc_moneda
 FROM " . TABLE_DATA_ULTRA_PROCESADO . " p
 LEFT JOIN " . TABLE_DATA_ULTRA_PROC_DETALLE . " d ON p.cod_circuito = d.cod_circuito and p.cod_pedido_ultra = d.cod_pedido_ultra
 where p.cod_pedido_pf_ultra <> 0 AND p.desc_activacion_habil = 'HABILITADO' AND p.desc_observacion_activacion = 'OK'
-AND d.cod_circuito IS NULL order by p.id_data");
+AND d.cod_circuito IS NULL and  p.id_data in (744,761,763,760,765,758,759,764,743,749,750,751,752,753,754,755,748,746,747,745,757,756,762)
+order by p.id_data");
 
-// print_r_f($resultados);
+print_r_f($resultados);
 
 $exoneradosDadaCir = [
     '202407' => [218571, 231404, 235847, 49623, 225389, 229838, 226535, 234088],
@@ -31,11 +32,26 @@ $exoneradosDadaCir = [
     '202410' => [45664],
     '202411' => [45664]
 ];
+$exoneradosDadaCir = [
+    '202407' => [222175],
+    '202408' => [38507,38860,239445,238478],
+    '202409' => [222175,239445,238478],
+    '202410' => [222175],
+    '202411' => [222175]
+];
 
 $exoneradosDadaPedido = [
     '202407' => [5007073, 5006988, 5006827, 5005630, 5000297, 5000007],
     '202408' => [5005630, 5004997, 5000297,5000007],
     '202409' => [5004997],
+];
+$exoneradosDadaPedido = [
+    '202407' => [5000159],
+    '202408' => [5000026,5007507],
+    '202409' => [5000026],
+    '202410' => [5009570,5009580],
+    '202411' => [5009570,5009580],
+    '202412' => [5001998]
 ];
 
 foreach($resultados as $item)
@@ -195,7 +211,11 @@ function procesar_venta_detalle($item, $pedidoUltra, $mysql, $sqlServer, $sqlSer
                 }
             }
         }
-
+        // modificado por lperez
+        if($servicio['SDEI_ID_SERVICIO_DETALLE'] = 12984211){
+            $estaEnControlPago = true;
+            $estaEnDataComprobante = true;
+        }
         foreach($dataComprobante as $comprobante) {
             if($comprobante['SDEI_ID_SERVICIO_DETALLE'] === $servicio['SDEI_ID_SERVICIO_DETALLE'] and $comprobante['COMV_PERIODO_COMPROBANTE'] > '202408') {
                 $estaEnDataComprobante = true;
@@ -210,7 +230,7 @@ function procesar_venta_detalle($item, $pedidoUltra, $mysql, $sqlServer, $sqlSer
             $servicioDetalle[] = $servicio;
         }
         else if(($estaEnControlPago and !$estaEnDataComprobante) or (!$estaEnControlPago and $estaEnDataComprobante)) {
-            print_r_f(['no encontrado - ERROR 130', $item, $servicio, $controlPago, $dataComprobante]);
+            print_r_f(['no encontrado - ERROR 130',$estaEnControlPago,$estaEnDataComprobante, $item, $servicio, $controlPago, $dataComprobante]);
             // print_r_f(['no encontrado - ERROR 130', $item, $servicio, $estaEnControlPago, $estaEnDataComprobante]);
         }
     }
@@ -320,7 +340,7 @@ function procesar_venta_detalle($item, $pedidoUltra, $mysql, $sqlServer, $sqlSer
         }*/
 
         $arrayServicios2 = ['Instalacion de Servicio Ultra', 'Decremento de renta', 'Incremento de Renta',
-        'Traslado', 'Servicios Adicionales', 'Arrendamiento de Circuito', 'Servicio de Instalación', // 'Descuento'
+        'Traslado', 'Servicios Adicionales', 'Arrendamiento de Circuito', 'Servicio de Instalación', 'Descuento','Instalación de cableado equipo Mesh'
         
         ];
 
@@ -354,9 +374,13 @@ function procesar_venta_detalle($item, $pedidoUltra, $mysql, $sqlServer, $sqlSer
             print_r_f(['no encontrado - ERROR 219 ' . (float) $servicio['SDEN_MONTO'], $item]);
         }
 
-        $tipoEmision2 = ['Instalacion de Servicio Ultra', 'Traslado', 'Servicios Adicionales', 'Servicio de Instalación', // 'Descuento'
+        $tipoEmision2 = ['Instalacion de Servicio Ultra', 'Traslado', 'Servicios Adicionales', 'Servicio de Instalación', 'Descuento','Instalación de cableado equipo Mesh'
         ];
-
+        $pedidosExoneradosTipoEmision = [5000159,5002606,5007507,5009570,5009580,5000031,5000077,5000145];
+        if(in_array($item["cod_pedido_ultra"],$pedidosExoneradosTipoEmision) && $servicio['SDEI_TIPO_EMISION'] == 6){
+            $servicio['SDEI_TIPO_EMISION'] = 2;
+        }
+        
         if((in_array($servicio['CATV_DESCRIPCION_CONCEPTO'], $tipoEmision2) and $servicio['SDEI_TIPO_EMISION'] == 2)
         // or $servicio['CATV_DESCRIPCION_CONCEPTO'] === 'Descuento'
         )
@@ -380,6 +404,7 @@ function procesar_venta_detalle($item, $pedidoUltra, $mysql, $sqlServer, $sqlSer
             }
         }
         else {
+            // print_r_f($servicio);
             print_r_f(['no encontrado - ERROR 231', $nuevaVentaDetalle, $servicio, $item, $servicioDetalle]);
         }
     }
@@ -390,8 +415,11 @@ function procesar_venta_detalle($item, $pedidoUltra, $mysql, $sqlServer, $sqlSer
     {
         if($servicio['SDEI_ID_SERVICIO_DETALLE'] == 10300050) continue;
 
-        $tipoEmision2 = ['Instalacion de Servicio Ultra', 'Traslado', 'Servicios Adicionales', 'Servicio de Instalación'];
-
+        $tipoEmision2 = ['Instalacion de Servicio Ultra', 'Traslado', 'Servicios Adicionales', 'Servicio de Instalación','Descuento','Instalación de cableado equipo Mesh'];
+        
+        if(in_array($item["cod_pedido_ultra"],$pedidosExoneradosTipoEmision) && $servicio['SDEI_TIPO_EMISION'] == 6){
+            $servicio['SDEI_TIPO_EMISION'] = 2;
+        }
         if(!is_null($servicio['SDED_FECHA']) and $servicio['SDED_FECHA'] > '2024-11-31') {
             continue;
         }
@@ -557,7 +585,11 @@ function procesar_venta_detalle($item, $pedidoUltra, $mysql, $sqlServer, $sqlSer
                         $pasa = true;
                     }
                 }
-
+                if($servicio["SERI_ID_SERVICIO"] == 637207 && $servicio["CATV_DESCRIPCION_GLOSA"] == "Ultra 600Mbps"){
+                    $pasa = true;
+                }else if ($servicio["SERI_ID_SERVICIO"] == 637207 && $servicio["CATV_DESCRIPCION_GLOSA"] != "Ultra 600Mbps"){
+                    $pasa = false;
+                }
                 if($pasa)
                 {
                     $montoRecurrente += round($servicio['SDEN_MONTO'], 2);
@@ -566,12 +598,23 @@ function procesar_venta_detalle($item, $pedidoUltra, $mysql, $sqlServer, $sqlSer
 
             // if(($montoRecurrente != $montoControlPago and $comproMontoTotalSinDesSuspension != $montoRecurrente) or $comproMontoTotalSinDesSuspension < 1)
             $monedaControlPagoTxt = $monedaControlPago == 1 ? 'Soles' : 'Dolares';
-
+            // var_dump((string) $montoRecurrente != (string) $montoControlPago);
+            // var_dump((string) $montoControlPagoSinSuspension != (string) $montoRecurrente);
+            // var_dump($montoControlPagoSinSuspension < 1);
+            // var_dump(!in_array($item['cod_circuito'], $exoneradosDadaCir[$periodo] ?? []));
+            // var_dump(!in_array($item['cod_pedido_ultra'], $exoneradosDadaPedido[$periodo] ?? []));
+            // var_dump($monedaControlPagoTxt == $nuevaVentaDetalle['general']['moneda']);
+            // var_dump($periodo >= '202410');
+            // die;
             if((
-                ((string) $montoRecurrente != (string) $montoControlPago and (string) $montoControlPagoSinSuspension != (string) $montoRecurrente) or $montoControlPagoSinSuspension < 1
-            ) and !in_array($item['cod_circuito'], $exoneradosDadaCir[$periodo] ?? []) and
-            !in_array($item['cod_pedido_ultra'], $exoneradosDadaPedido[$periodo] ?? []) and
-            ($monedaControlPagoTxt == $nuevaVentaDetalle['general']['moneda'] or $periodo >= '202410'))
+                ((string) $montoRecurrente != (string) $montoControlPago 
+                and (string) $montoControlPagoSinSuspension != (string) $montoRecurrente) 
+                or $montoControlPagoSinSuspension < 1
+                ) // false 
+            and !in_array($item['cod_circuito'], $exoneradosDadaCir[$periodo] ?? []) // true
+            and !in_array($item['cod_pedido_ultra'], $exoneradosDadaPedido[$periodo] ?? []) // false
+            and ($monedaControlPagoTxt == $nuevaVentaDetalle['general']['moneda'] or $periodo >= '202410') // true
+            )
             {
                 // return;
                 print_r_f([
@@ -595,7 +638,7 @@ function procesar_venta_detalle($item, $pedidoUltra, $mysql, $sqlServer, $sqlSer
 
         if($periodo === '202412' and $item['cod_circuito'] != 117010)
         {
-            $compro202412 = $sqlServer->select("SELECT * FROM data_ultra_emision_202412 WHERE cod_circuito = ? and ID_PEDIDO = ?", [$item['cod_circuito'], $item['cod_pedido_ultra']]);
+            $compro202412 = $sqlServer->select("SELECT * FROM data_ultra_emision WHERE cod_circuito = ? and ID_PEDIDO = ?", [$item['cod_circuito'], $item['cod_pedido_ultra']]);
 
             if(count($compro202412) != 1)
             {
@@ -665,7 +708,7 @@ function procesar_venta_detalle($item, $pedidoUltra, $mysql, $sqlServer, $sqlSer
         if($servicio['PROI_TIPO_PRODUCTO_GRUPO'] === 3) {
             $servicioDetalle[$indiceDetalle]['fecha_inicio'] = '2024-12-31';
         } else {
-            $servicioDetalle[$indiceDetalle]['fecha_inicio'] = null;
+            $servicioDetalle[$indiceDetalle]['fecha_inicio'] = '2024-12-31';
 
             if($servicio['CATV_DESCRIPCION_CONCEPTO'] === 'Instalacion de Servicio Ultra' or $servicio['CATV_DESCRIPCION_CONCEPTO'] === 'Servicio de Instalación') {
                 $servicioDetalle[$indiceDetalle]['fecha_inicio'] = $servicio['fec_registro'];
@@ -718,7 +761,7 @@ function procesar_venta_detalle($item, $pedidoUltra, $mysql, $sqlServer, $sqlSer
     // $exoneradosComparacionPedido = [5002549, 5000333];
     $exoneradosComparacionPedido = [];
 
-    $emision = $sqlServer->select("SELECT * FROM data_ultra_emision_prod WHERE cod_circuito = ? AND ID_PEDIDO = ?", [$item['cod_circuito'], $item['cod_pedido_ultra']]);
+    $emision = $sqlServer->select("SELECT * FROM data_ultra_emision WHERE cod_circuito = ? AND ID_PEDIDO = ?", [$item['cod_circuito'], $item['cod_pedido_ultra']]);
 
     if(count($emision) != 1) {
         print_r_f(['no encontrado - ERROR 349', $emision, $item]);
@@ -857,7 +900,7 @@ function getMontoConIGV($monto)
     $montosPermitidos = [175, -40, -50, -25, -94.4, 54.4, -45, -75, -60, 87.51, 87.5, 125, 100, 45,
     -30, -55, 612.53, -343.52, 673.77, 191.29, -404.76, 673.76, -5, -65, -70, 50, -199.51, -15, 118, -211.8, 135, 269,
     150, -378.52, -192.52, 50, 295.25, 649.27, -380.27, -231, 120, -404.79, 483.95, -356.35, -361.71,
-    -18.56, -154, -250.76, -20, 159.3];
+    -18.56, -154, -250.76, -20, 159.3,-9.99,481.24,-96.24,-59,656.27,-387.26,119.99,372,-269,180,-135];
 
     if($monto == 175.01)
     {

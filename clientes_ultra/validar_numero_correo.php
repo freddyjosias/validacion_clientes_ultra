@@ -1,5 +1,5 @@
 <?php
-
+// antes del bot
 require_once __DIR__ . '/../connection.php';
 require_once __DIR__ . '/../functions.php';
 
@@ -9,7 +9,7 @@ $sqlServer->connect();
 
 
 $resultados = $sqlServer->select("SELECT id_data, nro_documento, desc_celular, desc_celular2, desc_correo
-FROM data_ultra_procesado_uat where flg_validate_celular = 0 order by id_data");
+FROM data_ultra_procesado where flg_validate_celular = 0 order by id_data");
 
 $cantidadActualizar = 0;
 $cantidadNoActualizar = 0;
@@ -125,7 +125,7 @@ foreach ($resultados as $fila)
             if($primeraOpcion != '') {
                 $resultadosContacto['desc_celular'] = $primeraOpcion;
                 $actualizarCelular = true;
-                print_r_f(['auxCelularAForzar4', $auxCelularAForzar, 'primeraOpcion', $primeraOpcion]);
+                //print_r_f(['auxCelularAForzar4', $auxCelularAForzar, 'primeraOpcion', $primeraOpcion]);
             }
             // print_r_f(['auxCelularAForzar', $auxCelularAForzar, $fila]);
         }
@@ -286,20 +286,20 @@ foreach ($resultados as $fila)
 
     if($actualizarCelular) {
         $cantidadActualizarCelular++;
-        print_r_f(['actualizarCelular', 'resultadosContacto' => $resultadosContacto, 'fila' => $fila]);
-        $sqlServer->update("UPDATE data_ultra_procesado_uat SET desc_celular = ? WHERE id_data = ?", [$resultadosContacto['desc_celular'], $fila['id_data']]);
+        //print_r_f(['actualizarCelular', 'resultadosContacto' => $resultadosContacto, 'fila' => $fila]);
+        $sqlServer->update("UPDATE data_ultra_procesado SET desc_celular = ? WHERE id_data = ?", [$resultadosContacto['desc_celular'], $fila['id_data']]);
     }
 
     if($actualizarTelefono) {
         $cantidadActualizarTelefono++;
         // print_r_f(['actualizarTelefono', 'resultadosContacto' => $resultadosContacto, 'fila' => $fila]);
-        $sqlServer->update("UPDATE data_ultra_procesado_uat SET desc_celular2 = ? WHERE id_data = ?", [$resultadosContacto['desc_telefono'], $fila['id_data']]);
+        $sqlServer->update("UPDATE data_ultra_procesado SET desc_celular2 = ? WHERE id_data = ?", [$resultadosContacto['desc_telefono'], $fila['id_data']]);
     }
 
     if($actualizarCorreo) {
         $cantidadActualizarCorreo++;
         // print_r_f(['actualizarCorreo', $resultadosContacto, $fila]);
-        $sqlServer->update("UPDATE data_ultra_procesado_uat SET desc_correo = ? WHERE id_data = ?", [$resultadosContacto['desc_correo'], $fila['id_data']]);
+        $sqlServer->update("UPDATE data_ultra_procesado SET desc_correo = ? WHERE id_data = ?", [$resultadosContacto['desc_correo'], $fila['id_data']]);
     }
 
     // if($actualizarCelularFuente) {
@@ -309,7 +309,7 @@ foreach ($resultados as $fila)
 
     // print_r_f(['STOPPER', $resultadosContacto, $fila]);
 
-    $sqlServer->update("UPDATE data_ultra_procesado_uat SET flg_validate_celular = 1, updated_at = getdate() WHERE id_data = ?", [$fila['id_data']]);
+    $sqlServer->update("UPDATE data_ultra_procesado SET flg_validate_celular = 1, updated_at = getdate() WHERE id_data = ?", [$fila['id_data']]);
 }
 
 // print_r_f($arrayActualizarCorreo);

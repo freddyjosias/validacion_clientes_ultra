@@ -1,5 +1,5 @@
 <?php
-
+// solo para mpls
 require_once __DIR__ . '/../connection.php';
 require_once __DIR__ . '/../functions.php';
 
@@ -12,7 +12,7 @@ a.desc_moneda, compro_nro_doc
 FROM data_ultra_emision a
 INNER JOIN ECOM.ECOM_CLIENTE C ON C.CLIV_CODIGO_CLIENTE = a.codigo_cliente_pago
 WHERE a.flg_status_habil = 1 AND a.cod_circuito = 0 AND a.RED = 'MPLS' and a.cli_nro_doc NOT IN ('-') 
-order by cli_nro_doc");
+order by a.id_data");
 
 // 07861996
 // print_r_f($resultados);

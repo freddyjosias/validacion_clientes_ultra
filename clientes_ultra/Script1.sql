@@ -515,8 +515,8 @@ select desc_observacion, * from data_ultra_raw where CircuitoCod in (39314, 1178
 
 select * from PE_OPTICAL_ADM_PROD_20241224_060004.ECOM.ECOM_CLIENTE WHERE CLIV_NRO_RUC = '10702482572'
 
-alter table data_ultra_procesado_uat add flg_validate_plan TINYINT NOT NULL DEFAULT 0
-alter table data_ultra_procesado_uat add flg_validate_celular TINYINT NOT NULL DEFAULT 0
+alter table data_ultra_procesado add flg_validate_plan TINYINT NOT NULL DEFAULT 0
+alter table data_ultra_procesado add flg_validate_celular TINYINT NOT NULL DEFAULT 0
 
 
 select status_ingreso_venta, status_resultado, razon_social_intranet, nombres, ape_paterno, ape_materno,

@@ -13,7 +13,7 @@ BASE_URL = "https://appcrm-win.ultra.pe/"
 VALIDACION_URL = f"{BASE_URL}pages/bo_asesor_validacion.php"
 CREDENTIALS = {
     "username": "22222222",
-    "password": "22222222"
+    "password": "r&FMs(v&g.Q"
 }
 
 

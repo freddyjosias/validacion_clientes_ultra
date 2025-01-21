@@ -1,11 +1,11 @@
 <?php
-
+// data_raw_ultra_bk2=data_ultra_gpon_raw
 function migrar_g_pon(array $data, $sqlServer)
 {
-    $resultados = $sqlServer->select("select * from data_raw_ultra_bk2 WHERE cod_pedido_ultra = ?", [$data['IdPedido']]);
+    $resultados = $sqlServer->select("select * from data_ultra_gpon_raw WHERE cod_pedido_ultra = ?", [$data['IdPedido']]);
 
     if(count($resultados) != 1) {
-        print_r_f($resultados);
+        print_r_f(["No hay resultados: Error 8",$resultados]);
         return;
     }
 
@@ -32,11 +32,10 @@ function migrar_g_pon(array $data, $sqlServer)
     if($data['IdPedido'] == 5000084) {
         $data['RUC'] = '10702482572';
     }
-
     $validaciones = [
         'COD_PEDIDO_ULTRA' => $data['IdPedido'] == $resultados['cod_pedido_ultra'],
         'NRO_DOCUMENTO' => $data['RUC'] == $resultados['num_documento'],
-        'ANCHO_BANDA' => $data['AnchoBanda'] == convertAnchoBandaToMbpsGbps($resultados['ancho_banda']),
+        'ANCHO_BANDA' => trim($data['AnchoBanda']) == convertAnchoBandaToMbpsGbps($resultados['ancho_banda']),
         'TIPO_SERVICIO' => trim($data['TipoServicio']) == trim($resultados['desc_oferta']),
         'ESTADO_SERVICIO' => $data['Estado'] == $resultados['estado'],
         'MONEDA' => $data['Moneda'] == $resultados['desc_moneda'],
@@ -209,7 +208,7 @@ function migrar_g_pon(array $data, $sqlServer)
         }
 
         if($resultados['desc_ultimo_periodo'] != '202412') {
-            // print_r_f($resultados);
+            print_r_f(["Error desc_ultimo_periodo != 202412 - Error 211",$resultados]);
 
             $sqlServer->update("UPDATE data_ultra_raw SET flg_migrado = 1, desc_observacion = ? WHERE IdPedido = ? and RUC = ?",
             ['No tiene comprobante en el periodo 12/2024', $resultados['cod_pedido_ultra'], $data['RUC']]);
@@ -217,7 +216,7 @@ function migrar_g_pon(array $data, $sqlServer)
         }
 
         $periodoEmision = $sqlServer->select("SELECT desc_situacion, cod_circuito
-        FROM data_ultra_emision_202412
+        FROM data_ultra_emision
         where cli_nro_doc = ? and ID_PEDIDO = ? and flg_status_habil = 1;", [$resultados['num_documento'], $resultados['cod_pedido_ultra']]);
         
         if(count($periodoEmision) != 1)
@@ -375,8 +374,8 @@ function migrar_g_pon(array $data, $sqlServer)
         ]); */
         
 
-        $insertQuery = "INSERT INTO data_ultra_procesado_uat (
-            nro_documento, razon_social, id_cliente_intranet, id_cliente_ultra, 
+        $insertQuery = "INSERT INTO data_ultra_procesado (
+            id_data,nro_documento, razon_social, id_cliente_intranet, id_cliente_ultra, 
             id_cliente_ecom, cod_pedido_ultra, cod_circuito, desc_circuito,
             razon_social_intranet, fec_vence_contrato, fec_baja, ancho_banda,
             estado_pedido, desc_moneda, desc_direccion, desc_latitud, desc_longitud,
@@ -387,7 +386,7 @@ function migrar_g_pon(array $data, $sqlServer)
             representante_tipo_doc, representante_nro_doc, representante_nombres, representante_ape_paterno, representante_ape_materno,
             desc_activacion_habil, desc_producto,flg_check_nombres, desc_observacion_activacion, cod_pedido_pf_ultra,
             status_ingreso_venta
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+        ) VALUES ((select max(id_data)+1 from data_ultra_procesado),?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
         ?, ?, 0, 'OK', 0, 1)";
 
         $params = [
@@ -417,7 +416,7 @@ function migrar_g_pon(array $data, $sqlServer)
             trim($dataEquifax['ApellidoMaterno']), 
             trim($resultadosContacto['desc_correo']),
             trim($resultadosContacto['desc_celular']),
-            trim($resultadosContacto['desc_telefono']),
+            trim($resultadosContacto['desc_telefono'] ?? ''),
             $resultados['desc_tipo_documento'],
             $resultadosDireccion['tipo_domicilio'],
             $resultadosDireccion['nro_piso'],
@@ -428,11 +427,11 @@ function migrar_g_pon(array $data, $sqlServer)
             $resultados['id_contrato_ecom'],
             $resultados['id_servicio_ecom'],
             $resultados['desc_ultimo_periodo'],
-            trim($dataRepresentante['desc_tipo_documento']),
-            trim($dataRepresentante['desc_numero_documento']),
-            trim($dataRepresentante['desc_nombres']),
-            trim($dataRepresentante['desc_apellido_paterno']),
-            trim($dataRepresentante['desc_apellido_materno']),
+            trim($dataRepresentante['desc_tipo_documento'] ?? ''),
+            trim($dataRepresentante['desc_numero_documento'] ?? ''),
+            trim($dataRepresentante['desc_nombres'] ?? ''),
+            trim($dataRepresentante['desc_apellido_paterno'] ?? ''),
+            trim($dataRepresentante['desc_apellido_materno'] ?? ''),
             trim($desc_activacion_habil),
             trim($productoFinal)
         ];
@@ -441,9 +440,9 @@ function migrar_g_pon(array $data, $sqlServer)
 
         $result = $sqlServer->insert($insertQuery, $params);
 
-        if($result == false)
+        if($result === false)
         {
-            echo "Error al insertar datos en la tabla data_ultra_procesado_uat";
+            echo "Error al insertar datos en la tabla data_ultra_procesado";
             print_r_f($result);
             return;
         }

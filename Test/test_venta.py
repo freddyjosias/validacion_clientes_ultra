@@ -10,19 +10,19 @@ from selenium.webdriver.common.keys import Keys
 
 from utilidad import Util
 
-BASE_URL = "https://appwinforce-win.ultra.pe/login"
+BASE_URL = "http://10.1.4.81:180//login"
 CREDENTIALS = {
     "username": "migracion.win.ultra9@ultra.pe",
-    "password": "Socio@#$@%"
+    "password": "%I#2i5XYPNr]E1U"
 }
 
-NUEVO_SEGUIMIENTO_URL = "https://appwinforce-win.ultra.pe/nuevoSeguimiento"
+NUEVO_SEGUIMIENTO_URL = "http://10.1.4.81:180//nuevoSeguimiento"
 
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 IMAGEN_PATH = os.path.join(CURRENT_DIR, "contrato_generico.pdf")
 
-FECHA_TRAMO = "06-01-2025"
+FECHA_TRAMO = "22-01-2025"
 HORA_TRAMO = "12:00"
 
 class TestVenta:
@@ -95,14 +95,16 @@ class TestVenta:
     time.sleep(3)
 
     self.util.wait_id_clic("continuar")
-
+    print("mapa")
     time.sleep(3)
 
     #tipo de vivienda 'Multifamiliar'
     try:
       self.util.wait_id("tipo_servicio").find_element(By.XPATH, f"//option[. = '{self.tipoviv}']").click()
     except Exception:
-      return 1
+      #mostrar el error
+      print("tipo vivienda")
+      return 0
 
 
     if self.tipoviv != "Hogar":

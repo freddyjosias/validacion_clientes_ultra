@@ -6,15 +6,15 @@ require_once __DIR__ . '/../functions.php';
 $sqlServer = new SQLServerConnection('10.1.4.20', 'PE_OPTICAL_ADM', 'PE_OPTICAL_ERP', 'Optical123+');
 $sqlServer->connect();
 
-$resultados = $sqlServer->select("select distinct cod_pedido_ultra, cod_circuito from data_ultra_proc_detalle_pr where flg_validacion = 0");
+$resultados = $sqlServer->select("select distinct cod_pedido_ultra, cod_circuito from data_ultra_proc_detalle where flg_validacion = 0");
 
 foreach($resultados as $item)
 {
     $data = $sqlServer->select("select d.cod_pedido_ultra, d.cod_circuito, desc_concepto, cod_moneda, monto, p.ecom_id_servicio
-    from data_ultra_proc_detalle_pr d
-    inner join data_ultra_procesado_prod p on d.cod_circuito = p.cod_circuito and d.cod_pedido_ultra = p.cod_pedido_ultra
+    from data_ultra_proc_detalle d
+    inner join data_ultra_procesado p on d.cod_circuito = p.cod_circuito and d.cod_pedido_ultra = p.cod_pedido_ultra
     where d.flg_validacion = 0 and d.cod_circuito = ? and d.cod_pedido_ultra = ?", [$item['cod_circuito'], $item['cod_pedido_ultra']]);
-
+    
     if(count($data) == 0) {
         print_r_f($item);
     }
@@ -35,8 +35,8 @@ foreach($resultados as $item)
     $controlPago = $sqlServer->select("SELECT CP.CPGI_ID_CONTROL_PAGO, CP.SDEI_ID_SERVICIO_DETALLE,  CP.SERI_ID_SERVICIO, 
     CP.CPGI_MONEDA, CPGN_MONTO, CPGI_ESTADO, CPGB_SITUACION, CPGV_PERIODO_CONSUMO,
     CPGD_FECHA_CONSUMO_INI, CPGD_FECHA_CONSUMO_FIN, SD.CATI_ID_CATALOGO
-    FROM PE_OPTICAL_ADM_PROD_20250106_090317.ECOM.ECOM_CONTROL_PAGO CP
-    LEFT JOIN PE_OPTICAL_ADM_PROD_20250106_090317.ECOM.ECOM_SERVICIO_DETALLE SD ON CP.SDEI_ID_SERVICIO_DETALLE = SD.SDEI_ID_SERVICIO_DETALLE
+    FROM PE_OPTICAL_ADM.ECOM.ECOM_CONTROL_PAGO CP
+    LEFT JOIN PE_OPTICAL_ADM.ECOM.ECOM_SERVICIO_DETALLE SD ON CP.SDEI_ID_SERVICIO_DETALLE = SD.SDEI_ID_SERVICIO_DETALLE
     WHERE CP.SERI_ID_SERVICIO = ? AND CPGV_PERIODO_CONSUMO >= '202412' and CPGN_MONTO <> 0 and CP.CPGB_SITUACION = 1
     ORDER BY CP.CPGV_PERIODO_CONSUMO, CP.SDEI_ID_SERVICIO_DETALLE;
     ", [$servicio]);
@@ -71,13 +71,20 @@ foreach($resultados as $item)
         $monto = $monto == 125.01 ? 125.00 : $monto;
         $monto = $monto == 74.99 ? 75.00 : $monto;
         $monto = $monto == 268.99 ? 269.00 : $monto;
+        $monto = $monto == 79.99 ? 80.00 : $monto;
+        $monto = $monto == 269 ? 269.01 : $monto;
+        $monto = $monto == 115.00 ? 115.01 : $monto;
+        $monto = $monto == 115.01 ? 115 : $monto;
+        $monto = $monto == 116.01 ? 116 : $monto;
+        $monto = $monto == 269.01 ? 269 : $monto;
+        $monto = $monto == 120.01 ? 120 : $monto;
 
         if((string) $monto != (string) $montoRecurrente or $monedaControlPago != $moneda) {
             print_r_f(['error', $item, $monto, $montoRecurrente, $monedaControlPago, $moneda]);
         }
     }
 
-    $sumaRecurrente = $sqlServer->select("select SUMA_RECURRENTE from data_ultra_emision_prod where ID_PEDIDO = ? and cod_circuito = ?;", [$item['cod_pedido_ultra'], $item['cod_circuito']]);
+    $sumaRecurrente = $sqlServer->select("select SUMA_RECURRENTE from data_ultra_emision where ID_PEDIDO = ? and cod_circuito = ?;", [$item['cod_pedido_ultra'], $item['cod_circuito']]);
 
     if(count($sumaRecurrente) != 1) {
         print_r_f([$item, $sumaRecurrente]);
@@ -87,12 +94,17 @@ foreach($resultados as $item)
     $sumaRecurrente = $sumaRecurrente == 175.01 ? 175.00 : $sumaRecurrente;
     $sumaRecurrente = $sumaRecurrente == 174.99 ? 175.00 : $sumaRecurrente;
     $sumaRecurrente = $sumaRecurrente == 268.98 ? 269.00 : $sumaRecurrente;
+    $sumaRecurrente = $sumaRecurrente == 269.00 ? 269.01 : $sumaRecurrente;
+    $sumaRecurrente = $sumaRecurrente == 115.00 ? 115.01 : $sumaRecurrente;
+    $sumaRecurrente = $sumaRecurrente == 115.01 ? 115 : $sumaRecurrente;
+    $sumaRecurrente = $sumaRecurrente == 95.00 ? 94.99 : $sumaRecurrente;
+    $sumaRecurrente = $sumaRecurrente == 269.01 ? 269 : $sumaRecurrente;
 
     if((string) $sumaRecurrente != (string) $montoRecurrente) {
         print_r_f(['error 2'	, $item, $sumaRecurrente, $montoRecurrente]);
     }
 
-    $sqlServer->update("update data_ultra_proc_detalle_pr set flg_validacion = 1 where cod_pedido_ultra = ? and cod_circuito = ?;", [$item['cod_pedido_ultra'], $item['cod_circuito']]);
+    $sqlServer->update("update data_ultra_proc_detalle set flg_validacion = 1 where cod_pedido_ultra = ? and cod_circuito = ?;", [$item['cod_pedido_ultra'], $item['cod_circuito']]);
 
     continue;
 

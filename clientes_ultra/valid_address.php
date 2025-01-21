@@ -1,5 +1,5 @@
 <?php
-
+// data_ultra_gpon_raw=b2
 require_once __DIR__ . '/../connection.php';
 require_once __DIR__ . '/../functions.php';
 require_once __DIR__ . '/helper.php';
@@ -10,17 +10,17 @@ $sqlServer->connect();
 $postgres = new PostgreSQLConnection('10.1.4.25', '5432', 'opticalip_de', 'postgres', '');
 $postgres->connect();
 
-$mysql = new MySQLConnection('10.1.4.81:33061', 'db_wincrm_prod', 'root', 'R007w1N0r3');
+$mysql = new MySQLConnection('10.1.4.81:33061', 'db_wincrm_250115', 'root', 'R007w1N0r3');
 $mysql->connect();
 
-$resultados = $sqlServer->select("SELECT d.id_data, d.cod_circuito, d.nro_documento, d.flg_config_address, d.cod_pedido_ultra, d.desc_direccion,
+$resultados = $sqlServer->select("SELECT top 23 d.id_data, d.cod_circuito, d.nro_documento, d.flg_config_address, d.cod_pedido_ultra, d.desc_direccion,
 r.Direccion, s.SERV_DIRECCION, r.Latitud, r.Longitud, desc_latitud, desc_longitud, desc_distrito, desc_provincia, desc_region, desc_ubigeo,
 cod_pedido_pf_ultra
 FROM data_ultra_procesado d
 INNER JOIN data_ultra_raw r ON d.cod_circuito = r.CircuitoCod OR d.cod_pedido_ultra = (CASE WHEN r.IdPedido = '-' THEN -1 ELSE r.IdPedido END)
 INNER JOIN PE_OPTICAL_ADM.ECOM.ECOM_SERVICIO s ON s.SERI_ID_SERVICIO = d.ecom_id_servicio
 WHERE flg_config_address = 0 and d.cod_pedido_pf_ultra <> 0
-order by d.id_data");
+order by cod_pedido_pf_ultra desc");
 
 
 $querySQL = '';
@@ -191,21 +191,21 @@ foreach ($resultados as $fila)
             $fila['Direccion'] = str_replace('CALLE MONT+ìCULO', 'CALLE MONTÍCULO', $fila['Direccion']);
             $fila['Direccion'] = str_replace('Jirun ', 'Jiron ', $fila['Direccion']);
             $fila['Direccion'] = str_replace('Av. Roca y Boloua', 'Av. Roca y Boloña', $fila['Direccion']);
-            
+            $fila['SERV_DIRECCION'] = strtoupper($fila['SERV_DIRECCION']);
             if($fila['Direccion'] != $fila['SERV_DIRECCION'])
             {
-                print_r_f([$fila]);
+                print_r_f(["Error 162s",$fila]);
             }
 
             $fila['SERV_DIRECCION'] = mb_strtoupper($fila['SERV_DIRECCION']);
 
             $getUbigeo = $sqlServer->select("select desc_latitud, desc_longitud, ubigeo, desc_distrito, desc_provincia, desc_region
-            from data_raw_ultra_bk2
+            from data_ultra_gpon_raw
             where cod_pedido_ultra = ?", [$fila['cod_pedido_ultra']]);
 
             if(count($getUbigeo) != 1)
             {
-                print_r_f([$fila]);
+                print_r_f(["Error 208s",$fila]);
             }
 
             $getUbigeo = $getUbigeo[0];
